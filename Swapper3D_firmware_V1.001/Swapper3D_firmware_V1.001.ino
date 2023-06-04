@@ -1,12 +1,15 @@
 //Swapper3D FULL octoprint compatible firmware, Author: BigBrain3D, License: AGPLv3
 #include <Adafruit_PWMServoDriver.h> 
 #include <LiquidCrystal.h>
- 
-const Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-String inputString = "";
+
+
+const int inputStringSize = 25;
+char inputString[inputStringSize];
 bool stringComplete = false;
+int inputStringIndex = 0;
 byte insertNumber = 0;
 
+const Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 const int servo_pwm_max = 2900;// 2376;
 const int servo_pwm_min = 600; //484;
@@ -99,11 +102,11 @@ int pos_Cutter_Rotate_Stowed = 0;
 bool LockToolPartWayThru = false;
 const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
-void printWithParity(String message) {
-  Serial.println(message + String(checkParity(message)));
+void printWithParity(char* message) {
+  Serial.println(String(message) + String(checkParity(message)));
 }
 
-void updateLCD(String message1, String message2) {
+void updateLCD(const char* message1, const char* message2) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(message1);
@@ -111,18 +114,21 @@ void updateLCD(String message1, String message2) {
   lcd.print(message2);
 }
 
-void updateLCD_line1(String message) {
-  lcd.clear();
+void updateLCD_line1(const char* message) {
+  lcd.setCursor(0, 0);
+  for (int i = 0; i < 16; i++) {
+    lcd.write(' ');  // Clear the line by writing spaces
+  }
   lcd.setCursor(0, 0);
   lcd.print(message);
 }
 
-void updateLCD_line2(String message) {
-  lcd.clear();
-  lcd.setCursor(0, 1);
-  lcd.print(message);
-}
 
+// void updateLCD_line2(const char* message) {
+  // lcd.clear();
+  // lcd.setCursor(0, 1);
+  // lcd.print(message);
+// }
 
 //**** Holder Rotate (HR) ****
 //Servo 4
@@ -627,14 +633,13 @@ void setup() {
 	pinMode(A3, INPUT_PULLUP);
 	delay(10);
 	
-	inputString.reserve(50);
 	updateLCD("Ready to Swap!", "Insert: Empty");
 }
 
 
-int checkParity(String message) {
+int checkParity(char* message) {
   int count = 0;
-  for (int i = 0; i < message.length(); i++) {
+  for (int i = 0; i < strlen(message); i++) {
     int value = message[i];
     while (value) {
       count++;
@@ -645,142 +650,6 @@ int checkParity(String message) {
 }
 
 
-void loop() {
-  if (stringComplete) {
-    int inputParity = inputString.charAt(inputString.length() - 1) - '0';
-    String inputMessage = inputString.substring(0, inputString.length() - 1);
-    String inputMessage_TextPart = inputMessage;
-    int inputMessage_NumberPart = 0;
-
-    // Find the index where the number starts
-    int numIndex = -1;
-    for (int i = 0; i < inputMessage.length(); i++) {
-      if (isdigit(inputMessage.charAt(i))) {
-        numIndex = i;
-        break;
-      }
-    }
-
-    // Extract the text part and number part if a number is found
-    if (numIndex != -1) {
-      inputMessage_TextPart = inputMessage.substring(0, numIndex);
-      inputMessage_NumberPart = (byte)inputMessage.substring(numIndex).toInt();
-    }
-
-    Serial.print("number index: ");
-    Serial.println(numIndex);
-    Serial.print("inputMessage: ");
-    Serial.println(inputMessage);
-    Serial.print("inputMessage_TextPart: ");
-    Serial.println(inputMessage_TextPart);
-    Serial.print("inputMessage_NumberPart: ");
-    Serial.println(inputMessage_NumberPart);
-
-    if (checkParity(inputMessage) == inputParity) {
-      if (inputMessage_TextPart == "octoprint") {
-        printWithParity("swapper");
-      } else if (inputMessage_TextPart == "load_insert") {
-        insertNumber = inputMessage_NumberPart;
-        load_insert(insertNumber);
-        printWithParity("ok");
-        delay(3000);
-        updateLCD("Ready to Swap!", "Insert: " + String(insertNumber));
-      } else if (inputMessage_TextPart == "unload_connect") {
-        updateLCD_line1("Connect");
-        unload_connect();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unload_pulldown") {
-        updateLCD_line1("Pulldown");
-        unload_pulldown();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unload_deploycutter") {
-        updateLCD_line1("Deploy cutter");
-        unload_deploycutter();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unload_cut") {
-        updateLCD_line1("Cut");
-        unload_cut();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unload_wasteBinAvoidPalette") {
-        updateLCD_line1("Avoid waste bin");
-        unload_wasteBinAvoidPalette();
-        printWithParity("ok");
-        delay(3000);		
-      } else if (inputMessage_TextPart == "unload_stowcutter") {
-        updateLCD_line1("Stow cutter");
-        unload_stowcutter();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unload_dumpwaste") {
-        updateLCD_line1("Dump waste");
-        unload_dumpwaste();
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "unloaded_message") {
-        insertNumber = 0;
-        updateLCD("Ready to Swap!", "Insert: Empty");
-        printWithParity("ok");
-        delay(3000);
-      } else if (inputMessage_TextPart == "swap_message") {
-        if (insertNumber == 0) {
-          updateLCD_line1("Swapping -> " + String(inputMessage_NumberPart));
-        } else {
-          updateLCD_line1("Swapping " + String(insertNumber) + " -> " + String(inputMessage_NumberPart));
-        }
-        printWithParity("ok");
-      } else if (inputMessage_TextPart == "wiper_deploy") {
-        updateLCD_line1("Deploy wiper");
-        wiper_deploy();
-        printWithParity("ok");
-        delay(3000);
-        updateLCD_line1("Wiper deployed");
-      } else if (inputMessage_TextPart == "wiper_stow") {
-        updateLCD_line1("Stow wiper");
-        wiper_stow();
-        printWithParity("ok");
-        delay(3000);
-        updateLCD("Ready to Swap!", "Insert: " + String(insertNumber));
-      } else {
-        // Handle command not found
-        printWithParity("Command not found");
-      }
-    } else {
-      Serial.println("Parity check failed");
-    }
-
-    inputString = "";
-    stringComplete = false;
-  }
-}
-
-
-
-
-// function that continuously reads incoming serial data, 
-//appending each character to a string until it encounters a newline character, 
-//which signals the end of a message. 
-void serialEvent() {
-  while (Serial.available()) {
-    char inChar = (char)Serial.read();
-    if (inChar != '\n' && inChar != '\r') {
-      inputString += inChar;
-    }
-    if (inChar == '\n') {
-      stringComplete = true;
-    }
-  }
-}
-
-void ClearSerialBuffer(){
-  while (Serial.available()) 
-  {
-		Serial.read();
-  }
-}
 
 void load_insert(int toolToLoad){	
 
@@ -847,8 +716,6 @@ void load_insert(int toolToLoad){
 	lcd.print("Heating nozzle");
 	lcd.setCursor(0,1);
 	lcd.print("                ");
-
-  ClearSerialBuffer();
 }
 
 void unload_connect(){
@@ -943,6 +810,28 @@ void Unload()
 	}
   currentStepOfProcess = 0;
 }
+
+
+// function that continuously reads incoming serial data, 
+//appending each character to a string until it encounters a newline character, 
+//which signals the end of a message. 
+// function that continuously reads incoming serial data, 
+//appending each character to a string until it encounters a newline character, 
+//which signals the end of a message. 
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    if (inChar == '\n') {
+      stringComplete = true;
+    } else if (inputStringIndex < inputStringSize - 1) {
+      inputString[inputStringIndex] = inChar;
+      inputStringIndex++;
+    }
+  }
+}
+
+
+
 
 void RefreshPositionServoInfo()
 {	
@@ -1189,4 +1078,127 @@ void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
   		}	
   	}
   }
+}
+
+
+void loop() {
+  if (stringComplete) {
+	Serial.println("In loop");
+    int inputParity = inputString[strlen(inputString) - 1] - '0';
+    inputString[strlen(inputString) - 1] = '\0'; // Remove the parity character
+    char inputMessage_TextPart[inputStringSize];
+    int inputMessage_NumberPart = 0;
+	
+	char octoprint[] = "octoprint";
+
+    // Find the index where the number starts
+    int numIndex = -1;
+    for (int i = 0; i < strlen(inputString); i++) {
+      if (isdigit(inputString[i])) {
+        numIndex = i;
+        break;
+      }
+    }
+
+    // Extract the text part and number part if a number is found
+    if (numIndex != -1) {
+      strncpy(inputMessage_TextPart, inputString, numIndex);
+      inputMessage_TextPart[numIndex] = '\0'; // Ensure null termination
+      inputMessage_NumberPart = atoi(inputString + numIndex);
+    } else {
+      strncpy(inputMessage_TextPart, inputString, inputStringSize);
+    }
+
+		Serial.print("number index: ");
+		Serial.println(numIndex);
+		Serial.print("inputMessage: ");
+		Serial.println(inputString);
+		Serial.print("inputMessage_TextPart: ");
+		Serial.println(inputMessage_TextPart);
+		Serial.print("inputMessage_NumberPart: ");
+		Serial.println(inputMessage_NumberPart);
+
+		if (checkParity(inputString) == inputParity) {
+		  if (inputMessage_TextPart == octoprint) {
+			printWithParity("swapper");
+		  } else if (strcmp(inputMessage_TextPart, "load_insert") == 0) {
+			insertNumber = inputMessage_NumberPart;
+			load_insert(insertNumber);
+			printWithParity("ok");
+			delay(3000);
+			//updateLCD("Ready to Swap!", "Insert: " + String(insertNumber));
+		  } else if (strcmp(inputMessage_TextPart, "unload_connect") == 0) {
+			updateLCD_line1("Connect");
+			unload_connect();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unload_pulldown") == 0) {
+			updateLCD_line1("Pulldown");
+			unload_pulldown();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unload_deploycutter") == 0) {
+			updateLCD_line1("Deploy cutter");
+			unload_deploycutter();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unload_cut") == 0) {
+			updateLCD_line1("Cut");
+			unload_cut();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unload_AvoidBin") == 0) {
+			updateLCD_line1("Avoid waste bin");
+			unload_wasteBinAvoidPalette();
+			printWithParity("ok");
+			delay(3000);		
+		  } else if (strcmp(inputMessage_TextPart, "unload_stowcutter") == 0) {
+			updateLCD_line1("Stow cutter");
+			unload_stowcutter();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unload_dumpwaste") == 0) {
+			updateLCD_line1("Dump waste");
+			unload_dumpwaste();
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "unloaded_message") == 0) {
+			insertNumber = 0;
+			updateLCD("Ready to Swap!", "Insert: Empty");
+			printWithParity("ok");
+			delay(3000);
+		  } else if (strcmp(inputMessage_TextPart, "swap_message") == 0) {
+			if (insertNumber == 0) {
+			  //updateLCD_line1("Swapping -> " + String(inputMessage_NumberPart));
+			} else {
+			  //updateLCD_line1("Swapping " + String(insertNumber) + " -> " + String(inputMessage_NumberPart));
+			}
+			printWithParity("ok");
+		  } else if (strcmp(inputMessage_TextPart, "wiper_deploy") == 0) {
+			updateLCD_line1("Deploy wiper");
+			wiper_deploy();
+			printWithParity("ok");
+			delay(3000);
+			updateLCD_line1("Wiper deployed");
+		  } else if (strcmp(inputMessage_TextPart, "wiper_stow") == 0) {
+			updateLCD_line1("Stow wiper");
+			wiper_stow();
+			printWithParity("ok");
+			delay(3000);
+			//updateLCD("Ready to Swap!", "Insert: " + String(insertNumber));
+		  } else {
+			// Handle command not found
+			printWithParity("Command not found");
+		  }
+		}
+		
+	} else {
+	  //Serial.println("Parity check failed");
+	  //Serial.println(inputString);
+	  
+	}
+
+    memset(inputString, 0, inputStringSize);
+    inputStringIndex = 0;
+    stringComplete = false;
 }
