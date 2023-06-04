@@ -1,20 +1,12 @@
+//Swapper3D FULL octoprint compatible firmware, Author: BigBrain3D, License: AGPLv3
 #include <Adafruit_PWMServoDriver.h> 
 #include <LiquidCrystal.h>
  
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-//String lastReceivedMessage = "";
-bool handShakeSuccessful = false;
-int received;
-int startStage = 0;
-bool started = false; //once started == true then start swapping from the serial reads
-bool CommandInProcess = false;
+const Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 String inputString = "";
 bool stringComplete = false;
-byte  insertNumber = "";
+byte insertNumber = 0;
 
-const int AddOnType_MMU = 0;
-const int AddOnType_BlendBox = 1;
-int AddOnType = AddOnType_MMU;
 
 const int servo_pwm_max = 2900;// 2376;
 const int servo_pwm_min = 600; //484;
@@ -36,32 +28,13 @@ const uint8_t s_Cutter_Rotate = 5; //CR
 const uint8_t s_Cutter_Action = 6; //CA
 const uint8_t s_WasteCup_Action = 7; //WA
 
-int servos[numOfServos][3]; //pin #, max angle, current angle
-String servos_names[numOfServos] = {"Tool_Rotate", "Tool_UpDown", "Tool_LockUnlock", "Cutter_Rotate", "Cutter_CutOpen", "WasteCup_DumpFill", "ToolHolder_Rotate", "ExtruderHotend_LockUnlock"};
+
+
+int servos[numOfServos][3]; //pin #, max angle, current angle //note: splitting this cannot lower memory since it cannot be a const since all elements are written at runtime
+
 
 //LCD
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-unsigned long tepTimer = 0;
-bool setupComplete = false;
-int buttonPress;                               // variable to store the value coming from the analog pin
-int potValue = 0;
-int potMinValue = 600; //15
-int potMaxValue = 1000;
-int potRange = 400; //1008
-int inServoTuning = false;
-int potCentered = false;
-int toolDegrees = 0;
-int pulselength = 0;
-int currentPotPosition = 0;
-int currentAngle = 0;
-int moveToAngle = 0;
-bool servoSetModeEnabled = false;
-bool buttonPressed = false;
-float anglePercentOfMax = 0.0;
-int potMatchValue = 0;
-int maxAngle = 180.0; //360.0
-int currentServoEditing = 0;
-bool loopStarted = false;
 
 //swap tools process
 const int eeps_ServoNumber = 0;
@@ -69,7 +42,6 @@ const int eeps_Degrees = 1;
 const int eeps_MsDelayPerDegreeMoved = 2;
 const int eeps_MsDelayAfterCommandSent = 3;
 const int eeps_StepType = 4; //eeps_ButtonCheck = 4;
-const int eeps_IsIncludedInMMU = 5;
 
 const int eeRegularStep = 0; //eeButtonCheck_No = 0;
 const int eeButtonCheck_Empty = 1;
@@ -86,20 +58,18 @@ const int eeToolHolderPrepUNrotate_Degrees = 3; //4; //1; //2; //3; //3; //1; //
 
 const int numOfProcessSteps_LoadTool = 21; //***change this if adding or removing process steps
 const int numOfProcessSteps_UnloadTool = 30; //***change this if adding or removing process steps
-bool executeNextProcessStep = false;
 int currentStepOfProcess = 0;
-int ProcessSteps_LoadTool[numOfProcessSteps_LoadTool][5]; //servo number, degrees, msDelayPerDegree, msDelayAfterCommandSent, buttonCheck
-int ProcessSteps_UnloadTool[numOfProcessSteps_UnloadTool][6]; //servo number, degrees, msDelayPerDegree, msDelayAfterCommandSent, buttonCheck, IsIncludedInMMU
+byte ProcessSteps_LoadTool[numOfProcessSteps_LoadTool][4]; //servo number, msDelayPerDegree, msDelayAfterCommandSent, buttonCheck
+int ProcessSteps_LoadTool_Degrees[numOfProcessSteps_LoadTool][1]; //degrees
+byte ProcessSteps_UnloadTool[numOfProcessSteps_UnloadTool][4]; //servo number, msDelayPerDegree, msDelayAfterCommandSent, buttonCheck
+int ProcessSteps_UnloadTool_Degrees[numOfProcessSteps_UnloadTool][1]; //degrees
+
 int ps_currentServo = 0;
 int ps_targetAngle = 0;
 int ps_msDelayPerDegreeMoved = 0;
 int ps_msDelayAfterCommandSent = 0;
 int numberOfStepsToProcess = 0;
-int msDelayAfterCommandSent_Buffer = 100; //50 //in milliseconds //extra ms delay 
-
-
-
-
+const int msDelayAfterCommandSent_Buffer = 100; //50 //in milliseconds //extra ms delay 
 
 
 //menu
@@ -111,47 +81,23 @@ const int eeUnloadTool = 1;
 const int eeAutomaticProcess = 0;
 const int eeManualProcess = 1;
 
-const int mm_menu_OnceEndless = 0;
-const int mm_menu_LoadUnload = 1;
-const int mm_menu_AutoManual = 2;
-const int mm_menu_Process = 3;
-
-bool automaticExecuteProcessSteps = false;
-int menu_currentLevel = 0;
-int menu_OnceEndless_position = 0; //for the Once/Endless menu
-int menu_LoadUnload_position = 0; //for the load/unload menu
-int menu_AutoManual_position = 0; //for the auto/manual menu
-const int menu_OnceEndless_TotalPositions = 2;
-const int menu_LoadUnload_TotalPositions = 2;
-const int menu_AutoManual_TotatlPositions = 2;
-String menu_OnceEndless_Name[menu_OnceEndless_TotalPositions] = {"Once", "Endless"};
-String menu_LoadUnload_Names[menu_LoadUnload_TotalPositions] = {"Load", "Unload"};
-String menu_AutoManual_Names[menu_AutoManual_TotatlPositions] = {"Auto", "Manual"};
-bool Selected_LoadUnload = false;
-bool Selected_Load = false;
-bool Selected_Unload = false;
-
-
 //error state button press
 const bool ErrorCheckingEnabed = false;
 const int CheckButton_Pin = 3; //0; //digital pin zero(0)
-const int eeePauseAtRotation = 95;
 bool InErrorState = false;
 int CurrentProcessType = eeLoadTool;//load/unload
-int ErrorOnProcessStep = 0;
 
 //tool holder rotation and selection
 bool firstPositionCommandGiven = false;
 const int servoMinAngle = 0;
-float pos_Tool_Holder_FirstTool = 15; //11.7; //11; //12; //2;
+float pos_Tool_Holder_FirstTool = 15; //11.7; //11; //12; //2; //note: eeprom offset is added at runtime so cannot be const
 bool toolIsLoaded = false;
 int CurrentTool = 0;
-int eeth_maxTool = 24;
 
-int pos_Tool_Lock_Locked;
-int pos_Cutter_Rotate_Stowed;
+int pos_Tool_Lock_Locked = 0;
+int pos_Cutter_Rotate_Stowed = 0;
 bool LockToolPartWayThru = false;
-int numMsUntilLock = 50; //100; //200; //10ms per degree currently
+const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
 void printWithParity(String message) {
   Serial.println(message + String(checkParity(message)));
@@ -182,14 +128,13 @@ void updateLCD_line2(String message) {
 //Servo 4
 int Adjustment_HolderRotate = 0;
 
-void ToolHolder_AlignToThisTool(int SelectThisTool)
-{
-int localPulseLength = 0;
-int msDelayPerToolPostionToCompleteMovement = 50; 
-int msDelayPadding = 50;
-int msDelayUntilRotationComplete = 0; //total ms to delay for the current tool holder rotation
-float degreesPerTool = 14.4; //14.72; //computed angle is 14.4d per spline calced as 25T splines 360/25=14.4 //14.72; //last 14.80 //this works for 25T's but barely: 14.85; //19:14.95 slightly too much;
-float degreesPositionOfSelectedTool = (float)SelectThisTool * degreesPerTool;
+void ToolHolder_AlignToThisTool(int SelectThisTool){
+	int localPulseLength = 0;
+	int msDelayPerToolPostionToCompleteMovement = 50; 
+	int msDelayPadding = 50;
+	int msDelayUntilRotationComplete = 0; //total ms to delay for the current tool holder rotation
+	float degreesPerTool = 14.4; //14.72; //computed angle is 14.4d per spline calced as 25T splines 360/25=14.4 //14.72; //last 14.80 //this works for 25T's but barely: 14.85; //19:14.95 slightly too much;
+	float degreesPositionOfSelectedTool = (float)SelectThisTool * degreesPerTool;
 
 //apply adjustment from EEPROM
 	pos_Tool_Holder_FirstTool = pos_Tool_Holder_FirstTool + Adjustment_HolderRotate;
@@ -207,8 +152,7 @@ float degreesPositionOfSelectedTool = (float)SelectThisTool * degreesPerTool;
 	CurrentTool = SelectThisTool;  
 }
 
-int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM)
-{  
+int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM){  
   int angleRange = MaxAngle - MinAngle;
   int pwmRange = maxPWM - minPWM;
   
@@ -218,9 +162,11 @@ int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM)
   return pwmByDesiredAngle;
 }
 
-void setup() 
-{
-	//position variables
+
+
+void SetSwapStepLocations(){
+	int pulselength = 0;
+		//position variables
 	//Servo 0
 	//**** Tool Rotate (TR) ****
 	int Adjustment_Tool_Rotate = 0; //1; //-1; //0; //1; //2; //changed out servo all should be off by same angle over last servo
@@ -292,36 +238,8 @@ void setup()
 	int pos_WasteCup_Action_Fill = 110 + Adjustment_WasteCup_Action; //0
 	int pos_WasteCup_Action_Dump = 99 + Adjustment_WasteCup_Action; //107
 
-		
-	
-	
-	Serial.begin(9600);
-	// Serial.println("Swapper3D Start!");
-	
 
-	//this ensures that the serial buffer is empty
-	//so that no aberant tool changes are performed
-	ClearSerialBuffer();
-	
-
-	lcd.begin(16, 2);
-	lcd.setCursor(0,0);
-	lcd.print("Ready to Swap!");	
-	lcd.setCursor(0,1);
-	lcd.print("Empty");
-	
-	pwm.begin();
-	pwm.setOscillatorFrequency(27000000);
-	pwm.setPWMFreq(300);  // Digtal servos run at 300Hz updates
-	
-	
-	//initialize the pin for the end effector insert full/empty checks
-	// pinMode(CheckButton_Pin, INPUT_PULLUP);
-	pinMode(A3, INPUT_PULLUP);
-	
-	delay(10);
-	
-	
+	//void SetServoStartingPositions(){
 	//pin #, max angle, start angle, current angle
 	servos[s_Tool_Rotate][eePinNum] = 15;
 	servos[s_Tool_Rotate][eeMaxAngle] = 360;
@@ -348,9 +266,6 @@ void setup()
 	servos[s_WasteCup_Action][eeMaxAngle] = 280;//micro
 	servos[s_WasteCup_Action][eeCurrentAngle] = pos_WasteCup_Action_Fill;//
 	
-	
-	
-
 	for(int i; i < 8; i++)
 	{	
 		pulselength = map(servos[i][eeCurrentAngle], 0, servos[i][eeMaxAngle], servo_pwm_min, servo_pwm_max);
@@ -362,6 +277,7 @@ void setup()
 	ToolHolder_AlignToThisTool(0);
 
 
+	//void SetProcessSteps_Load(){
 	//store process steps
 	ProcessSteps_LoadTool[0][eeps_ServoNumber] = s_Tool_Height;
 	ProcessSteps_LoadTool[1][eeps_ServoNumber] = s_Tool_Rotate;
@@ -385,27 +301,27 @@ void setup()
 	ProcessSteps_LoadTool[19][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_LoadTool[20][eeps_ServoNumber] = s_Tool_Rotate;
 
-	ProcessSteps_LoadTool[0][eeps_Degrees] = pos_Tool_Height_ButtingTheToolToTheLeftOfNext;
-	ProcessSteps_LoadTool[1][eeps_Degrees] = pos_Tool_Rotate_LeftOfToolInHolder;
-	ProcessSteps_LoadTool[2][eeps_Degrees] = pos_Tool_Height_NozzleCollarLevel;
-	ProcessSteps_LoadTool[3][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar;
-	ProcessSteps_LoadTool[4][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure;
-	ProcessSteps_LoadTool[5][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInHolder;
-	ProcessSteps_LoadTool[6][eeps_Degrees] = pos_Tool_Lock_Locked; 
-	ProcessSteps_LoadTool[7][eeps_Degrees] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_LoadTool[8][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
-	ProcessSteps_LoadTool[9][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
-	ProcessSteps_LoadTool[10][eeps_Degrees] = pos_QuickSwapHotend_Lock_Unlocked;
-	ProcessSteps_LoadTool[11][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInExtruder;
-	ProcessSteps_LoadTool[12][eeps_Degrees] = pos_Tool_Lock_Unlocked;
-	ProcessSteps_LoadTool[13][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder;
-	ProcessSteps_LoadTool[14][eeps_Degrees] = pos_QuickSwapHotend_Lock_Locked;
-	ProcessSteps_LoadTool[15][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure;
-	ProcessSteps_LoadTool[16][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar;
-	ProcessSteps_LoadTool[17][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar;
-	ProcessSteps_LoadTool[18][eeps_Degrees] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_LoadTool[19][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
-	ProcessSteps_LoadTool[20][eeps_Degrees] = pos_Tool_Rotate_WaitingForUnloadCommand;
+	ProcessSteps_LoadTool_Degrees[0][eeps_Degrees] = pos_Tool_Height_ButtingTheToolToTheLeftOfNext;
+	ProcessSteps_LoadTool_Degrees[1][eeps_Degrees] = pos_Tool_Rotate_LeftOfToolInHolder;
+	ProcessSteps_LoadTool_Degrees[2][eeps_Degrees] = pos_Tool_Height_NozzleCollarLevel;
+	ProcessSteps_LoadTool_Degrees[3][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar;
+	ProcessSteps_LoadTool_Degrees[4][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure;
+	ProcessSteps_LoadTool_Degrees[5][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInHolder;
+	ProcessSteps_LoadTool_Degrees[6][eeps_Degrees] = pos_Tool_Lock_Locked; 
+	ProcessSteps_LoadTool_Degrees[7][eeps_Degrees] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_LoadTool_Degrees[8][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
+	ProcessSteps_LoadTool_Degrees[9][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
+	ProcessSteps_LoadTool_Degrees[10][eeps_Degrees] = pos_QuickSwapHotend_Lock_Unlocked;
+	ProcessSteps_LoadTool_Degrees[11][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInExtruder;
+	ProcessSteps_LoadTool_Degrees[12][eeps_Degrees] = pos_Tool_Lock_Unlocked;
+	ProcessSteps_LoadTool_Degrees[13][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder;
+	ProcessSteps_LoadTool_Degrees[14][eeps_Degrees] = pos_QuickSwapHotend_Lock_Locked;
+	ProcessSteps_LoadTool_Degrees[15][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure;
+	ProcessSteps_LoadTool_Degrees[16][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar;
+	ProcessSteps_LoadTool_Degrees[17][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar;
+	ProcessSteps_LoadTool_Degrees[18][eeps_Degrees] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_LoadTool_Degrees[19][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
+	ProcessSteps_LoadTool_Degrees[20][eeps_Degrees] = pos_Tool_Rotate_WaitingForUnloadCommand;
 
 
 	ProcessSteps_LoadTool[0][eeps_MsDelayPerDegreeMoved] = 0;
@@ -475,22 +391,129 @@ void setup()
 	ProcessSteps_LoadTool[20][eeps_StepType] = eeRegularStep;
 
 
+	//void SetProcessSteps_unload_connect(){
 	ProcessSteps_UnloadTool[0][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_UnloadTool[1][eeps_ServoNumber] = s_Tool_Height;
 	ProcessSteps_UnloadTool[2][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_UnloadTool[3][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_UnloadTool[4][eeps_ServoNumber] = s_QuickSwapHotend_Lock;
+
+	ProcessSteps_UnloadTool_Degrees[0][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar;
+	ProcessSteps_UnloadTool_Degrees[1][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure;
+	ProcessSteps_UnloadTool_Degrees[2][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar;
+	ProcessSteps_UnloadTool_Degrees[3][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
+	ProcessSteps_UnloadTool_Degrees[4][eeps_Degrees] = pos_QuickSwapHotend_Lock_Unlocked;
+
+	ProcessSteps_UnloadTool[0][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[1][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[2][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[3][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[4][eeps_MsDelayPerDegreeMoved] = 0;
+	
+	ProcessSteps_UnloadTool[0][eeps_MsDelayAfterCommandSent] = 550; //350;
+	ProcessSteps_UnloadTool[1][eeps_MsDelayAfterCommandSent] = 630; //430; //330; //230; //up to nozzle collar level
+	ProcessSteps_UnloadTool[2][eeps_MsDelayAfterCommandSent] = 400; //200; //150; //90;
+	ProcessSteps_UnloadTool[3][eeps_MsDelayAfterCommandSent] = 90;
+	ProcessSteps_UnloadTool[4][eeps_MsDelayAfterCommandSent] = 110;
+	
+	ProcessSteps_UnloadTool[0][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[1][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[2][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[3][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[4][eeps_StepType] = eeRegularStep;  
+
+
+	//void SetProcessSteps_unload_pulldown(){
 	ProcessSteps_UnloadTool[5][eeps_ServoNumber] = s_Tool_Height; //down to cutting height
 	ProcessSteps_UnloadTool[6][eeps_ServoNumber] = s_Tool_Lock; 
 	ProcessSteps_UnloadTool[7][eeps_ServoNumber] = s_QuickSwapHotend_Lock;
+	
+	ProcessSteps_UnloadTool_Degrees[5][eeps_Degrees] = pos_Tool_Height_ToolLowered_CuttingHeight;
+	ProcessSteps_UnloadTool_Degrees[6][eeps_Degrees] = pos_Tool_Lock_Locked;
+	ProcessSteps_UnloadTool_Degrees[7][eeps_Degrees] = pos_QuickSwapHotend_Lock_Locked;
+	
+	ProcessSteps_UnloadTool[5][eeps_MsDelayPerDegreeMoved] = 10; //lower to cutting height
+	ProcessSteps_UnloadTool[6][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[7][eeps_MsDelayPerDegreeMoved] = 0;
+	
+	ProcessSteps_UnloadTool[5][eeps_MsDelayAfterCommandSent] = 0;
+	ProcessSteps_UnloadTool[6][eeps_MsDelayAfterCommandSent] = 0; //110; //lock tool. lock moved to SetServoPosition()
+	ProcessSteps_UnloadTool[7][eeps_MsDelayAfterCommandSent] = 0;
+	
+	ProcessSteps_UnloadTool[5][eeps_StepType] = eeExtrude; //lower to cutting height. extrude stage 2
+	ProcessSteps_UnloadTool[6][eeps_StepType] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
+	ProcessSteps_UnloadTool[7][eeps_StepType] = eeRegularStep;
+
+
+	//void SetProcessSteps_unload_deploycutter(){
 	ProcessSteps_UnloadTool[8][eeps_ServoNumber] = s_Cutter_Rotate;
+	
+	ProcessSteps_UnloadTool_Degrees[8][eeps_Degrees] = pos_Cutter_Rotate_Cutting;
+	
+	ProcessSteps_UnloadTool[8][eeps_MsDelayPerDegreeMoved] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
+	
+	ProcessSteps_UnloadTool[8][eeps_MsDelayAfterCommandSent] = 550; //650; //550; //500; //190; //cutter rotate
+	
+	ProcessSteps_UnloadTool[8][eeps_StepType] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
+	
+
+	//void SetProcessSteps_unload_cut(){
 	ProcessSteps_UnloadTool[9][eeps_ServoNumber] = s_Cutter_Action;
 	ProcessSteps_UnloadTool[10][eeps_ServoNumber] = s_Cutter_Action; //here
+	
+	ProcessSteps_UnloadTool_Degrees[9][eeps_Degrees] = pos_Cutter_Action_Cut;
+	ProcessSteps_UnloadTool_Degrees[10][eeps_Degrees] = pos_Cutter_Action_Open; //here
+	
+	ProcessSteps_UnloadTool[9][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[10][eeps_MsDelayPerDegreeMoved] = 0;//here
+	
+	ProcessSteps_UnloadTool[9][eeps_MsDelayAfterCommandSent] = 600; //550; //370; //130; //cut
+	ProcessSteps_UnloadTool[10][eeps_MsDelayAfterCommandSent] = 200; //250; //370;//130; //open //here
+	
+	ProcessSteps_UnloadTool[9][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[10][eeps_StepType] = eeRegularStep; //open cutters //here
+
+
+	//void SetProcessSteps_unload_wasteBinAvoidPalette(){
 	ProcessSteps_UnloadTool[11][eeps_ServoNumber] = s_Tool_Height;
 	ProcessSteps_UnloadTool[12][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_UnloadTool[13][eeps_ServoNumber] = s_Cutter_Action;
 	ProcessSteps_UnloadTool[14][eeps_ServoNumber] = s_Cutter_Action;
+	
+	ProcessSteps_UnloadTool_Degrees[11][eeps_Degrees] = pos_Tool_Height_ToolLowered_BelowCutterJaws;
+	ProcessSteps_UnloadTool_Degrees[12][eeps_Degrees] = pos_Tool_Rotate_PastWasteCup;
+	ProcessSteps_UnloadTool_Degrees[13][eeps_Degrees] = pos_Cutter_Action_Cut;
+	ProcessSteps_UnloadTool_Degrees[14][eeps_Degrees] = pos_Cutter_Action_Open;
+	
+	ProcessSteps_UnloadTool[11][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[12][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[13][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[14][eeps_MsDelayPerDegreeMoved] = 0;
+	
+	ProcessSteps_UnloadTool[11][eeps_MsDelayAfterCommandSent] = 0; //50; //uncomment for Palette
+	ProcessSteps_UnloadTool[12][eeps_MsDelayAfterCommandSent] = 0; //90; //uncomment for Palette
+	ProcessSteps_UnloadTool[13][eeps_MsDelayAfterCommandSent] = 0; //370; //130; //cut //uncomment for Palette
+	ProcessSteps_UnloadTool[14][eeps_MsDelayAfterCommandSent] = 0; //370; //130; //open //uncomment for Palette
+	
+    ProcessSteps_UnloadTool[11][eeps_StepType] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
+	ProcessSteps_UnloadTool[12][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[13][eeps_StepType] = eeRegularStep;
+	ProcessSteps_UnloadTool[14][eeps_StepType] = eeRegularStep;
+
+
+	//void SetProcessSteps_unload_stowcutter(){
 	ProcessSteps_UnloadTool[15][eeps_ServoNumber] = s_Cutter_Rotate;
+	
+	ProcessSteps_UnloadTool_Degrees[15][eeps_Degrees] = pos_Cutter_Rotate_Stowed;
+	
+	ProcessSteps_UnloadTool[15][eeps_MsDelayPerDegreeMoved] = 0;//go full speed so that the tool can be stowed symultaneously //6 slow to keep the servo from dying //0; //cutter rotate
+	
+	ProcessSteps_UnloadTool[15][eeps_MsDelayAfterCommandSent] = 0; //cutter rotate stowed //75; //50; //100; //200; //100; //50;//need slight delay just for the cutter to rotate a little away from the filament and break the strand //130;s_Cutter_Rotate no delay needed when stowing the cutter
+	
+	ProcessSteps_UnloadTool[15][eeps_StepType] = eeRetract; //eeRegularStep;
+
+
+	//void SetProcessSteps_unload_stowInsert(){
 	ProcessSteps_UnloadTool[16][eeps_ServoNumber] = s_Tool_Height; //lowest height
 	ProcessSteps_UnloadTool[17][eeps_ServoNumber] = s_Tool_Rotate; //to check button
 	ProcessSteps_UnloadTool[18][eeps_ServoNumber] = s_Tool_Rotate;
@@ -503,87 +526,20 @@ void setup()
 	ProcessSteps_UnloadTool[25][eeps_ServoNumber] = s_Tool_Height;
 	ProcessSteps_UnloadTool[26][eeps_ServoNumber] = s_Tool_Rotate;
 	ProcessSteps_UnloadTool[27][eeps_ServoNumber] = s_Tool_Rotate;
-	ProcessSteps_UnloadTool[28][eeps_ServoNumber] = s_WasteCup_Action;
-	ProcessSteps_UnloadTool[29][eeps_ServoNumber] = s_WasteCup_Action; 
-
-	ProcessSteps_UnloadTool[0][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar;
-	ProcessSteps_UnloadTool[1][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure;
-	ProcessSteps_UnloadTool[2][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar;
-	ProcessSteps_UnloadTool[3][eeps_Degrees] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
-	ProcessSteps_UnloadTool[4][eeps_Degrees] = pos_QuickSwapHotend_Lock_Unlocked;
-	ProcessSteps_UnloadTool[5][eeps_Degrees] = pos_Tool_Height_ToolLowered_CuttingHeight;
-	ProcessSteps_UnloadTool[6][eeps_Degrees] = pos_Tool_Lock_Locked;
-	ProcessSteps_UnloadTool[7][eeps_Degrees] = pos_QuickSwapHotend_Lock_Locked;
-	ProcessSteps_UnloadTool[8][eeps_Degrees] = pos_Cutter_Rotate_Cutting;
-	ProcessSteps_UnloadTool[9][eeps_Degrees] = pos_Cutter_Action_Cut;
-	ProcessSteps_UnloadTool[10][eeps_Degrees] = pos_Cutter_Action_Open; //here
-	ProcessSteps_UnloadTool[11][eeps_Degrees] = pos_Tool_Height_ToolLowered_BelowCutterJaws;
-	ProcessSteps_UnloadTool[12][eeps_Degrees] = pos_Tool_Rotate_PastWasteCup;
-	ProcessSteps_UnloadTool[13][eeps_Degrees] = pos_Cutter_Action_Cut;
-	ProcessSteps_UnloadTool[14][eeps_Degrees] = pos_Cutter_Action_Open;
-	ProcessSteps_UnloadTool[15][eeps_Degrees] = pos_Cutter_Rotate_Stowed;
-	ProcessSteps_UnloadTool[16][eeps_Degrees] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_UnloadTool[17][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck; //should have tool
-	ProcessSteps_UnloadTool[18][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //ready to lift into position
-	ProcessSteps_UnloadTool[19][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInHolder;
-	ProcessSteps_UnloadTool[20][eeps_Degrees] = pos_Tool_Lock_Unlocked; 
-	ProcessSteps_UnloadTool[21][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedInHolder;
-	ProcessSteps_UnloadTool[22][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
-	ProcessSteps_UnloadTool[23][eeps_Degrees] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
-	ProcessSteps_UnloadTool[24][eeps_Degrees] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
-	ProcessSteps_UnloadTool[25][eeps_Degrees] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_UnloadTool[26][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
-	ProcessSteps_UnloadTool[27][eeps_Degrees] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
-	ProcessSteps_UnloadTool[28][eeps_Degrees] = pos_WasteCup_Action_Dump;
-	ProcessSteps_UnloadTool[29][eeps_Degrees] = pos_WasteCup_Action_Fill;
-
-	ProcessSteps_UnloadTool[0][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[1][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[2][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[3][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[4][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[5][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[6][eeps_IsIncludedInMMU] = false; //needs to be completely removed it's not used in either...
-	ProcessSteps_UnloadTool[7][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[8][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[9][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[10][eeps_IsIncludedInMMU] = true;//here
-	ProcessSteps_UnloadTool[11][eeps_IsIncludedInMMU] = false; //tool down almost all the way
-	ProcessSteps_UnloadTool[12][eeps_IsIncludedInMMU] = false; //tool rotate
-	ProcessSteps_UnloadTool[13][eeps_IsIncludedInMMU] = false; //pos_Cutter_Action_Cut;
-	ProcessSteps_UnloadTool[14][eeps_IsIncludedInMMU] = false; //pos_Cutter_Action_Open;
-	ProcessSteps_UnloadTool[15][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[16][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[17][eeps_IsIncludedInMMU] = true; 
-	ProcessSteps_UnloadTool[18][eeps_IsIncludedInMMU] = true; 
-	ProcessSteps_UnloadTool[19][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[20][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[21][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[22][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[23][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[24][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[25][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[26][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[27][eeps_IsIncludedInMMU] = true;
-	ProcessSteps_UnloadTool[28][eeps_IsIncludedInMMU] = false; //pos_WasteCup_Action_Dump;
-	ProcessSteps_UnloadTool[29][eeps_IsIncludedInMMU] = false; //pos_WasteCup_Action_Fill;
-
-	ProcessSteps_UnloadTool[0][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[1][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[2][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[3][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[4][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[5][eeps_MsDelayPerDegreeMoved] = 10; //lower to cutting height
-	ProcessSteps_UnloadTool[6][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[7][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[8][eeps_MsDelayPerDegreeMoved] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
-	ProcessSteps_UnloadTool[9][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[10][eeps_MsDelayPerDegreeMoved] = 0;//here
-	ProcessSteps_UnloadTool[11][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[12][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[13][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[14][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[15][eeps_MsDelayPerDegreeMoved] = 0;//go full speed so that the tool can be stowed symultaneously //6 slow to keep the servo from dying //0; //cutter rotate
+	
+	ProcessSteps_UnloadTool_Degrees[16][eeps_Degrees] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_UnloadTool_Degrees[17][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck; //should have tool
+	ProcessSteps_UnloadTool_Degrees[18][eeps_Degrees] = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //ready to lift into position
+	ProcessSteps_UnloadTool_Degrees[19][eeps_Degrees] = pos_Tool_Height_ToolLoweredButStillInHolder;
+	ProcessSteps_UnloadTool_Degrees[20][eeps_Degrees] = pos_Tool_Lock_Unlocked; 
+	ProcessSteps_UnloadTool_Degrees[21][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedInHolder;
+	ProcessSteps_UnloadTool_Degrees[22][eeps_Degrees] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
+	ProcessSteps_UnloadTool_Degrees[23][eeps_Degrees] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
+	ProcessSteps_UnloadTool_Degrees[24][eeps_Degrees] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
+	ProcessSteps_UnloadTool_Degrees[25][eeps_Degrees] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_UnloadTool_Degrees[26][eeps_Degrees] = pos_Tool_Rotate_ButtonToolCheck;
+	ProcessSteps_UnloadTool_Degrees[27][eeps_Degrees] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
+	
 	ProcessSteps_UnloadTool[16][eeps_MsDelayPerDegreeMoved] = 0;
 	ProcessSteps_UnloadTool[17][eeps_MsDelayPerDegreeMoved] = 0;
 	ProcessSteps_UnloadTool[18][eeps_MsDelayPerDegreeMoved] = 0;
@@ -596,25 +552,7 @@ void setup()
 	ProcessSteps_UnloadTool[25][eeps_MsDelayPerDegreeMoved] = 0;
 	ProcessSteps_UnloadTool[26][eeps_MsDelayPerDegreeMoved] = 0;
 	ProcessSteps_UnloadTool[27][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[28][eeps_MsDelayPerDegreeMoved] = 0;
-	ProcessSteps_UnloadTool[29][eeps_MsDelayPerDegreeMoved] = 0;
-
-	ProcessSteps_UnloadTool[0][eeps_MsDelayAfterCommandSent] = 550; //350;
-	ProcessSteps_UnloadTool[1][eeps_MsDelayAfterCommandSent] = 630; //430; //330; //230; //up to nozzle collar level
-	ProcessSteps_UnloadTool[2][eeps_MsDelayAfterCommandSent] = 400; //200; //150; //90;
-	ProcessSteps_UnloadTool[3][eeps_MsDelayAfterCommandSent] = 90;
-	ProcessSteps_UnloadTool[4][eeps_MsDelayAfterCommandSent] = 110;
-	ProcessSteps_UnloadTool[5][eeps_MsDelayAfterCommandSent] = 0;
-	ProcessSteps_UnloadTool[6][eeps_MsDelayAfterCommandSent] = 0; //110; //lock tool. lock moved to SetServoPosition()
-	ProcessSteps_UnloadTool[7][eeps_MsDelayAfterCommandSent] = 0;
-	ProcessSteps_UnloadTool[8][eeps_MsDelayAfterCommandSent] = 550; //650; //550; //500; //190; //cutter rotate
-	ProcessSteps_UnloadTool[9][eeps_MsDelayAfterCommandSent] = 600; //550; //370; //130; //cut
-	ProcessSteps_UnloadTool[10][eeps_MsDelayAfterCommandSent] = 200; //250; //370;//130; //open //here
-	ProcessSteps_UnloadTool[11][eeps_MsDelayAfterCommandSent] = 0; //50; //uncomment for Palette
-	ProcessSteps_UnloadTool[12][eeps_MsDelayAfterCommandSent] = 0; //90; //uncomment for Palette
-	ProcessSteps_UnloadTool[13][eeps_MsDelayAfterCommandSent] = 0; //370; //130; //cut //uncomment for Palette
-	ProcessSteps_UnloadTool[14][eeps_MsDelayAfterCommandSent] = 0; //370; //130; //open //uncomment for Palette
-	ProcessSteps_UnloadTool[15][eeps_MsDelayAfterCommandSent] = 0; //cutter rotate stowed //75; //50; //100; //200; //100; //50;//need slight delay just for the cutter to rotate a little away from the filament and break the strand //130;s_Cutter_Rotate no delay needed when stowing the cutter
+	
 	ProcessSteps_UnloadTool[16][eeps_MsDelayAfterCommandSent] = 70;
 	ProcessSteps_UnloadTool[17][eeps_MsDelayAfterCommandSent] = 1000; //700; //200; //button check should have tool
 	ProcessSteps_UnloadTool[18][eeps_MsDelayAfterCommandSent] = 80;
@@ -627,25 +565,7 @@ void setup()
 	ProcessSteps_UnloadTool[25][eeps_MsDelayAfterCommandSent] = 350; //150; //lower to lowest level
 	ProcessSteps_UnloadTool[26][eeps_MsDelayAfterCommandSent] = 400; //300; //180; button check should be empty
 	ProcessSteps_UnloadTool[27][eeps_MsDelayAfterCommandSent] = 100;
-	ProcessSteps_UnloadTool[28][eeps_MsDelayAfterCommandSent] = 180;
-	ProcessSteps_UnloadTool[29][eeps_MsDelayAfterCommandSent] = 100;
-
-	ProcessSteps_UnloadTool[0][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[1][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[2][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[3][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[4][eeps_StepType] = eeRegularStep;  
-	ProcessSteps_UnloadTool[5][eeps_StepType] = eeExtrude; //lower to cutting height. extrude stage 2
-	ProcessSteps_UnloadTool[6][eeps_StepType] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
-	ProcessSteps_UnloadTool[7][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[8][eeps_StepType] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
-	ProcessSteps_UnloadTool[9][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[10][eeps_StepType] = eeRegularStep; //open cutters //here
-    ProcessSteps_UnloadTool[11][eeps_StepType] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
-	ProcessSteps_UnloadTool[12][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[13][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[14][eeps_StepType] = eeRegularStep;
-	ProcessSteps_UnloadTool[15][eeps_StepType] = eeRetract; //eeRegularStep;
+	
 	ProcessSteps_UnloadTool[16][eeps_StepType] = eeRegularStep;
 	ProcessSteps_UnloadTool[17][eeps_StepType] = eeButtonCheck_HoldingTool;
 	ProcessSteps_UnloadTool[18][eeps_StepType] = eeRegularStep;
@@ -658,16 +578,56 @@ void setup()
 	ProcessSteps_UnloadTool[25][eeps_StepType] = eeRegularStep;
 	ProcessSteps_UnloadTool[26][eeps_StepType] = eeButtonCheck_Empty;
 	ProcessSteps_UnloadTool[27][eeps_StepType] = eeRegularStep;
+
+
+	//void SetProcessSteps_unload_dumpwaste(){
+	ProcessSteps_UnloadTool[28][eeps_ServoNumber] = s_WasteCup_Action;
+	ProcessSteps_UnloadTool[29][eeps_ServoNumber] = s_WasteCup_Action; 
+
+	ProcessSteps_UnloadTool_Degrees[28][eeps_Degrees] = pos_WasteCup_Action_Dump;
+	ProcessSteps_UnloadTool_Degrees[29][eeps_Degrees] = pos_WasteCup_Action_Fill;
+	
+	
+	ProcessSteps_UnloadTool[28][eeps_MsDelayPerDegreeMoved] = 0;
+	ProcessSteps_UnloadTool[29][eeps_MsDelayPerDegreeMoved] = 0;
+
+	ProcessSteps_UnloadTool[28][eeps_MsDelayAfterCommandSent] = 180;
+	ProcessSteps_UnloadTool[29][eeps_MsDelayAfterCommandSent] = 100;
+
 	ProcessSteps_UnloadTool[28][eeps_StepType] = eeRegularStep;
 	ProcessSteps_UnloadTool[29][eeps_StepType] = eeRegularStep;
+}
 
+void SetProcessSteps_wiper_deploy(){
 	
-	ClearSerialBuffer();
+}
+
+void SetProcessSteps_wiper_stow(){
 	
-	setupComplete = true;
-	loopStarted = true;
+}
+
+
+void setup() {
+	Serial.begin(9600);
+
+	lcd.begin(16, 2);
+	lcd.setCursor(0,0);
+	lcd.print("Ready to Swap!");	
+	lcd.setCursor(0,1);
+	lcd.print("Empty");
 	
-	inputString.reserve(15);
+	pwm.begin();
+	pwm.setOscillatorFrequency(27000000);
+	pwm.setPWMFreq(300);  // Digtal servos run at 300Hz updates
+	
+	SetSwapStepLocations();
+	
+	//initialize the pin for the end effector insert full/empty checks
+	// pinMode(CheckButton_Pin, INPUT_PULLUP);
+	pinMode(A3, INPUT_PULLUP);
+	delay(10);
+	
+	inputString.reserve(50);
 	updateLCD("Ready to Swap!", "Insert: Empty");
 }
 
@@ -704,7 +664,7 @@ void loop() {
     // Extract the text part and number part if a number is found
     if (numIndex != -1) {
       inputMessage_TextPart = inputMessage.substring(0, numIndex);
-      inputMessage_NumberPart = inputMessage.substring(numIndex).toInt();
+      inputMessage_NumberPart = (byte)inputMessage.substring(numIndex).toInt();
     }
 
     Serial.print("number index: ");
@@ -745,6 +705,11 @@ void loop() {
         unload_cut();
         printWithParity("ok");
         delay(3000);
+      } else if (inputMessage_TextPart == "unload_wasteBinAvoidPalette") {
+        updateLCD_line1("Avoid waste bin");
+        unload_wasteBinAvoidPalette();
+        printWithParity("ok");
+        delay(3000);		
       } else if (inputMessage_TextPart == "unload_stowcutter") {
         updateLCD_line1("Stow cutter");
         unload_stowcutter();
@@ -778,7 +743,7 @@ void loop() {
         wiper_stow();
         printWithParity("ok");
         delay(3000);
-        updateLCD("Ready to Swap!", "Insert: " + insertNumber);
+        updateLCD("Ready to Swap!", "Insert: " + String(insertNumber));
       } else {
         // Handle command not found
         printWithParity("Command not found");
@@ -810,24 +775,22 @@ void serialEvent() {
   }
 }
 
-void ClearSerialBuffer()
-{
+void ClearSerialBuffer(){
   while (Serial.available()) 
   {
 		Serial.read();
   }
 }
 
+void load_insert(int toolToLoad){	
 
-
-void load_insert(int toolToLoad)
-{	
-
+	int pulselength = 0;
+	int buttonPress;
 	toolIsLoaded = true;
 	bool errorResume = false;
 	//return; //js
 	
-	currentStepOfProcess = 0;
+	int currentStepOfProcess = 0;
 	ToolHolder_AlignToThisTool(toolToLoad);
 
 
@@ -878,12 +841,10 @@ void load_insert(int toolToLoad)
 	}
 		
 		
-	// toolIsLoaded = true; //should be at the top so that it works when SetupMode
-  currentStepOfProcess = 0;
+	currentStepOfProcess = 0;
 
 	lcd.setCursor(0,1);
 	lcd.print("Heating nozzle");
-	//delay(30000);//no delay needed because in PS there is an M109 wait for temp. //25000); //30000); //must delay some time so the nozzle-hotend can heatup
 	lcd.setCursor(0,1);
 	lcd.print("                ");
 
@@ -907,6 +868,10 @@ void unload_cut(){
 	
 }
 
+void unload_wasteBinAvoidPalette(){
+	
+}
+
 void unload_stowcutter(){
 	
 }
@@ -926,6 +891,9 @@ void wiper_stow(){
 
 void Unload()
 {
+	int pulselength = 0;
+	int buttonPress;
+	
 	if (!toolIsLoaded) return;
 	
 	toolIsLoaded = false;
@@ -943,10 +911,7 @@ void Unload()
 		
 		if(!InErrorState)
 		{
-			do
-			{
-				currentStepOfProcess++;				
-			} while (ProcessSteps_UnloadTool[currentStepOfProcess][eeps_IsIncludedInMMU] == false);
+			currentStepOfProcess++;				
 		}
 		//if in error button check
 		//unwind to waiting for user input
@@ -1015,6 +980,7 @@ bool CheckButton_Pressed()
 
 void ProcessStep()
 {	
+	int pulselength = 0;
 	int stepType = 0;
 	
 	switch(CurrentProcessType)
@@ -1168,6 +1134,7 @@ void ProcessStep()
 
 void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
 {
+	int pulselength = 0;
 	int currentAngle = servos[ServoNum][eeCurrentAngle];
 	int angleDifference = TargetAngle - currentAngle;
 
