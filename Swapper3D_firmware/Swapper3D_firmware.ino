@@ -118,7 +118,7 @@ const byte eeToolHolderPrepUNrotate_degrees = 3; //4; //1; //2; //3; //3; //1; /
 //_msDelayPerDegreeMoved
 //_msDelayAfterCommandSent
 //_stepType
-const byte numOfProcessSteps_LoadTool = 30;//21; //***change this if adding or removing process steps
+const byte numOfProcessSteps_LoadTool = 21; //***change this if adding or removing process steps
 byte ProcessSteps_LoadTool_servoNumber[numOfProcessSteps_LoadTool]={0};
 int ProcessSteps_LoadTool_degrees[numOfProcessSteps_LoadTool]={0}; //degrees
 byte ProcessSteps_LoadTool_msDelayPerDegreeMoved[numOfProcessSteps_LoadTool]={0}; 
@@ -218,29 +218,6 @@ bool LockToolPartWayThru = false;
 const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
 
-const char* getServoName(byte WhichServo) {
-  switch (WhichServo) {
-    case 0:
-      return "Tool_Rotate";
-    case 1:
-      return "Tool_Height";
-    case 2:
-      return "Tool_Lock";
-    case 3:
-      return "QuickSwap_Lock";
-    case 4:
-      return "Holder_Rotate";
-    case 5:
-      return "Cutter_Rotate";
-    case 6:
-      return "Cutter_Action";
-    case 7:
-      return "WasteCup_Action";
-    default:
-      return "Invalid Servo"; // Return some error string or NULL.
-  }
-}
-
 const char* getServoInitials(byte WhichServo) {
   switch (WhichServo) {
     case 0:
@@ -337,7 +314,7 @@ char* generateMessage(byte servo, int angle) {
   itoa(angle, angle_str, 10);  // Convert angle to string
 
   static char formatted_message[50];
-  sprintf(formatted_message, "S: %s, A: %s", servo_name, angle_str);
+  sprintf(formatted_message, "S: %s    A: %s", servo_name, angle_str);
 
   return formatted_message;
 }
@@ -870,22 +847,11 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
     updateLCD_line2(ProcessSteps_servoNumber[currentStepOfProcess]
 					, ProcessSteps_degrees[currentStepOfProcess]);
 					
-	Serial.print("Current Step:");
-	Serial.print(currentStepOfProcess);
-	
-	Serial.print(" S:");
-	Serial.print(ProcessSteps_servoNumber[currentStepOfProcess]);
-	Serial.print(" A:");
-	Serial.println(ProcessSteps_degrees[currentStepOfProcess]);
+
     char* message = generateMessage(ProcessSteps_servoNumber[currentStepOfProcess]
 					, ProcessSteps_degrees[currentStepOfProcess]);
     Serial.println(message);
 
-//_servoNumber
-//_degrees
-//_msDelayPerDegreeMoved
-//_msDelayAfterCommandSent
-//_stepType
 	  
     ProcessStep(ProcessSteps_servoNumber[currentStepOfProcess]
 				,ProcessSteps_degrees[currentStepOfProcess] 
@@ -935,11 +901,6 @@ void load_insert(int toolToLoad) {
   
     ToolHolder_AlignToThisTool(toolToLoad);
 
-	for(int i = 0; i<20; i++){
-	  Serial.println(ProcessSteps_LoadTool_servoNumber[i]);
-	  
-	}
-  
 	ExecuteSteps(ProcessSteps_LoadTool_servoNumber
 				,ProcessSteps_LoadTool_degrees
 				,ProcessSteps_LoadTool_msDelayAfterCommandSent
@@ -1253,17 +1214,6 @@ void loop() {
       if (strcmp_P(inputMessage_TextPart, msg_OCTOPRINT) == 0) {
         printWithParity(msg_SWAPPER);
       } else if (strcmp_P(inputMessage_TextPart, msg_LOAD_INSERT) == 0) {
-		  
-	// Serial.println(ProcessSteps_LoadTool[0][0]);
-for(int i = 0; i<21; i++){
-	  Serial.println(ProcessSteps_LoadTool_servoNumber[i]);
-	  
-  }
-// ExecuteSteps(ProcessSteps_LoadTool
-// ,ProcessSteps_LoadTool_degrees
-// ,numOfProcessSteps_LoadTool);
-		  
-		  
         insertNumber = inputMessage_NumberPart;
         load_insert(insertNumber);
         printWithParity(msg_OK);
