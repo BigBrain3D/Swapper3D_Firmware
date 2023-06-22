@@ -2,6 +2,7 @@
 #include <Adafruit_PWMServoDriver.h> 
 #include <LiquidCrystal.h>
 #include <stdarg.h>
+#include <EEPROM.h>
 
 
 const char msg_OCTOPRINT[] PROGMEM = "octoprint";
@@ -37,7 +38,6 @@ const char msg_SWAPPING_FORMAT_1[] PROGMEM = "Swapping -> %d";
 const char msg_SWAPPING_FORMAT_2[] PROGMEM = "Swapping %d -> %d";
 const char msg_ParityCheckFailed[] PROGMEM = "Parity check failed";
 const char msg_LOADING[] PROGMEM = "Loading";
-const char msg_HEATING_NOZZLE[] PROGMEM = "Heating nozzle";
 const char msg_EMPTY_LINE[] PROGMEM = "                ";
 const char msg_ERROR_NOT_EMPTY[] PROGMEM = "ERROR: Not Empty!";
 const char msg_S_TO_RETRY[] PROGMEM = "S to retry";
@@ -47,6 +47,14 @@ const char msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL[] PROGMEM = "ERROR 2";
 const char msg_BUTTON_PRESSED[] PROGMEM = "Button pressed.";
 const char msg_BUTTON_NOT_PRESSED[] PROGMEM = "Button NOT PRESSED.";
 const char msg_ERROR_WAS_RESET[] PROGMEM = "Error was reset";
+// const char msg_HeatNozzle[] PROGMEM = "heatnozzle"; //probably not going to use as the printer will display it's own message "heating..."
+// const char msg_Heating[] PROGMEM = "Heating Nozzle...";
+const char msg_WriteToEeprom_MajorVersion[] PROGMEM = "writemajor";
+const char msg_WriteToEeprom_MinorVersion[] PROGMEM = "writeminor";
+const char msg_WriteToEeprom_PatchVersion[] PROGMEM = "writepatch";
+const char msg_ReadFromEeprom_MajorVersion[] PROGMEM = "readmajor";
+const char msg_ReadFromEeprom_MinorVersion[] PROGMEM = "readminor";
+const char msg_ReadFromEeprom_PatchVersion[] PROGMEM = "readpatch";
 // ... add more phrases as needed ...
 
 
@@ -363,10 +371,21 @@ int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM)
 
 void SetSwapStepLocations(){
 	int pulselength = 0;
-		//position variables
+	
+	//changed out servo all should be off by same angle over last servo	
+int Adjustment_Tool_Rotate = map(EEPROM.read(0), 100, 140, -20, 20);
+int Adjustment_Tool_Height = map(EEPROM.read(1), 100, 140, -20, 20);
+int Adjustment_Tool_Lock = map(EEPROM.read(2), 100, 140, -20, 20);
+int Adjustment_QuickSwapHotend_Lock = map(EEPROM.read(3), 100, 140, -20, 20);
+int Adjustment_Holder_Rotate = map(EEPROM.read(4), 100, 140, -20, 20); 
+int Adjustment_Cutter_Rotate = map(EEPROM.read(5), 100, 140, -20, 20);
+int Adjustment_Cutter_Action = map(EEPROM.read(6), 100, 140, -20, 20);
+int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
+
+
+//position variables
 	//Servo 0
 	//**** Tool Rotate (TR) ****
-	int Adjustment_Tool_Rotate = 0; //1; //-1; //0; //1; //2; //changed out servo all should be off by same angle over last servo
 	//next line is starting first 1st position
 	int pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 104 + Adjustment_Tool_Rotate; //103 //102; //104; //103;
 	int pos_Tool_Rotate_LeftOfToolInHolder = 98 + Adjustment_Tool_Rotate; //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
@@ -385,8 +404,8 @@ void SetSwapStepLocations(){
 
 	//**** Tool Height (TH) ****
 	//Servo 1
-	int Adjustment_Tool_Height = 0; //4; //14;//1 //-1; increasing this will lower all up/down moves. decreasing this will raise all up/down moves
 	//next line is starting first 1st position
+	//increasing this will lower all up/down moves. decreasing this will raise all up/down moves
 	int pos_Tool_Height_LowestLevel = 129 + Adjustment_Tool_Height; //125 //121 //Servo change 126; // below 126 it causes the servo to stall.  127; //126; //119; //117
 	int pos_Tool_Height_ButtingTheToolToTheLeftOfNext = 44 + Adjustment_Tool_Height; //40 //37, Servo change 42;//we want to be at the height of the hex on the right nozzle //39; //40; //41;
 	int pos_Tool_Height_NozzleCollarLevel = 37 + Adjustment_Tool_Height; //33 //30, Servo change 35; //38; //36; //29;
@@ -402,35 +421,30 @@ void SetSwapStepLocations(){
 
 	//**** Tool Lock (TL) (micro 280d servo) ****
 	//Servo 2
-	int Adjustment_Tool_Lock = 0;
 	//next line is starting first 1st position
 	int pos_Tool_Lock_Unlocked = 195 + Adjustment_Tool_Lock; //180
 	pos_Tool_Lock_Locked = 112 + Adjustment_Tool_Lock; //8 //7; //8; //standard move172degrees. 8;//now precision move +.5 //9;//8;//9; //8; //9; 13; 
 
 	//**** QuickSwap- Hotend Lock (QL) ****
 	//Servo 3
-	int Adjustment_QuickSwapHotend_Lock = 0;
 	//next line is 1st starting first 1st position
 	int pos_QuickSwapHotend_Lock_Locked = 70 + Adjustment_QuickSwapHotend_Lock; //0
 	int pos_QuickSwapHotend_Lock_Unlocked = 104 + Adjustment_QuickSwapHotend_Lock; //34 //32; //33; //34; //35; //29;
 
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
-	int Adjustment_Cutter_Rotate = 0;
 	//next line is starting first 1st position
 	pos_Cutter_Rotate_Stowed = 27 + Adjustment_Cutter_Rotate; //25;//1;//must be greater than 0. 0 causes major jittering. Something about 25 works better than 26. 26 had lots of jitter.
 	int pos_Cutter_Rotate_Cutting = 123 + Adjustment_Cutter_Rotate; //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 
 	//**** Cutter Action (CA) ****
 	//Servo 6
-	int Adjustment_Cutter_Action = 0;
 	//next line is starting first 1st position
 	int pos_Cutter_Action_Open = 175 + Adjustment_Cutter_Action; //160
 	int pos_Cutter_Action_Cut = 15 + Adjustment_Cutter_Action; //0 //20; //40; //6; //7; //21;
 
 	//**** Waste Cup Action (WA) (micro 280d servo) ****
 	//Servo 7
-	int Adjustment_WasteCup_Action = 0;
 	//next line is starting first 1st position
 	int pos_WasteCup_Action_Fill = 110 + Adjustment_WasteCup_Action; //0
 	int pos_WasteCup_Action_Dump = 99 + Adjustment_WasteCup_Action; //107
@@ -1043,13 +1057,26 @@ void ProcessStep(int currentServo
 				, int stepType) {
 	
   int pulselength = 0;
+  byte slowSpeed = 10;
+  int slowMoveDegrees = targetAngle * 0.1;
+  int msDelayAfterSlowCommandSent = slowMoveDegrees * (msDelayPerDegreeMoved / slowSpeed);
+	  
 
   switch(stepType) {
     //check to make sure the end effector is clear of inserts
-    case eeButtonCheck_Empty:
-      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
+    case eeButtonCheck_Empty:	
+	  //split the button press into 2 parts
+	  //fast move and slow move 
+	  //to avoid knocking the wires off the button
+		
+	  //fast move for 90%
+      SetServoPosition(currentServo, targetAngle*.9, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
-
+	  
+	  //slow move for 10%
+      SetServoPosition(currentServo, targetAngle, slowSpeed);
+	  delay(100);
+	  
       if(CheckButton_Pressed() && ErrorCheckingEnabed) {
         printWithParity(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
         updateLCD(msg_ERROR_NOT_EMPTY, msg_S_TO_RETRY);
@@ -1065,9 +1092,18 @@ void ProcessStep(int currentServo
       break;
       
     //check to make sure the end effector is holding an insert
-    case eeButtonCheck_HoldingTool:
-      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
+    case eeButtonCheck_HoldingTool:	
+	  //split the button press into 2 parts
+	  //fast move and slow move 
+	  //to avoid knocking the wires off the button
+		
+	  //fast move for 90%
+      SetServoPosition(currentServo, targetAngle*.9, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
+	  
+	  //slow move for 10%
+      SetServoPosition(currentServo, targetAngle, slowSpeed);
+	  delay(100);
 
       if(!CheckButton_Pressed() && ErrorCheckingEnabed) {
         printWithParity(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
@@ -1178,14 +1214,15 @@ void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
 
 void loop() {
   if (stringComplete) {
-    int inputParity = inputString[strlen(inputString) - 1] - '0';
-    inputString[strlen(inputString) - 1] = '\0'; // Remove the parity character
+	int inputStringLength = strlen(inputString);
+    int inputParity = inputString[inputStringLength - 1] - '0';
+    inputString[inputStringLength - 1] = '\0'; // Remove the parity character
     char inputMessage_TextPart[inputStringSize];
     int inputMessage_NumberPart = 0;
 
     // Find the index where the number starts
     int numIndex = -1;
-    for (int i = 0; i < strlen(inputString); i++) {
+    for (int i = 0; i < inputStringLength; i++) {
       if (isdigit(inputString[i])) {
         numIndex = i;
         break;
