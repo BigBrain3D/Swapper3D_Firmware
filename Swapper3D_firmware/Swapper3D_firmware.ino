@@ -55,6 +55,8 @@ const char msg_WriteToEeprom_PatchVersion[] PROGMEM = "writepatch";
 const char msg_ReadFromEeprom_MajorVersion[] PROGMEM = "readmajor";
 const char msg_ReadFromEeprom_MinorVersion[] PROGMEM = "readminor";
 const char msg_ReadFromEeprom_PatchVersion[] PROGMEM = "readpatch";
+const char msg_BoreAlignOn[] PROGMEM = "borealignon";
+const char msg_BoreAlignOff[] PROGMEM = "borealignoff";
 // ... add more phrases as needed ...
 
 
@@ -225,6 +227,8 @@ int pos_Cutter_Rotate_Stowed = 0;
 bool LockToolPartWayThru = false;
 const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
+int pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 0;
+int pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 0;
 
 const char* getServoInitials(byte WhichServo) {
   switch (WhichServo) {
@@ -387,7 +391,7 @@ int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
 	//Servo 0
 	//**** Tool Rotate (TR) ****
 	//next line is starting first 1st position
-	int pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 104 + Adjustment_Tool_Rotate; //103 //102; //104; //103;
+	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 104 + Adjustment_Tool_Rotate; //103 //102; //104; //103;
 	int pos_Tool_Rotate_LeftOfToolInHolder = 98 + Adjustment_Tool_Rotate; //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 96 + Adjustment_Tool_Rotate; //95 //80, 85; //90; //83;//76 = 11
 	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 98 + Adjustment_Tool_Rotate; //97 //98, 97; //95;
@@ -396,7 +400,7 @@ int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
 	int pos_Tool_Rotate_BetweenBothNozzles = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder - 7 + Adjustment_Tool_Rotate;
 	int pos_Tool_Rotate_ButtonToolCheck = 75 + Adjustment_Tool_Rotate; //74, 72, 75, 70 //72; //74; //75; //68;
 	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate; //280 //275, 282; //283; //284; //265; //270; //274;
-	int pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 286 + Adjustment_Tool_Rotate; //285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
+	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 286 + Adjustment_Tool_Rotate; //285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
 	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate; //292 //293 291; // 310; //305; //297;
 	int pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar = 291 + Adjustment_Tool_Rotate; //290 //291, 293 291; //285;
 	int pos_Tool_Rotate_WaitingForunloadCommand = 148 + Adjustment_Tool_Rotate; //147 //140;
@@ -1211,10 +1215,29 @@ void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
   }
 }
 
+//pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar //in position under extruder centered with bore
+//Bore alignment turned on. Tool Rotate Servo moved to position Under Extruder Connect With Nozzle Collar.
+//Bore alignment turned off. Tool Rotate Servo moved to position Butting The Tool To The Left Of Next.
+void boreAlignOn() {
+    // Set the Tool_Rotate servo to the desired position
+	int pulselength = 0;
+    servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
+    pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
+}
+
+//pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext //tool arm stored
+void boreAlignOff() {
+    // Set the Tool_Rotate servo to the desired position
+	int pulselength = 0;
+    servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
+    pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
+}
 
 void loop() {
   if (stringComplete) {
-	int inputStringLength = strlen(inputString);
+    int inputStringLength = strlen(inputString);
     int inputParity = inputString[inputStringLength - 1] - '0';
     inputString[inputStringLength - 1] = '\0'; // Remove the parity character
     char inputMessage_TextPart[inputStringSize];
@@ -1238,15 +1261,6 @@ void loop() {
       strncpy(inputMessage_TextPart, inputString, inputStringSize);
     }
 
-    //Serial.print("number index: ");
-    //Serial.println(numIndex);
-    //Serial.print("inputMessage: ");
-    //Serial.println(inputString);
-    //Serial.print("inputMessage_TextPart: ");
-    //Serial.println(inputMessage_TextPart);
-    //Serial.print("inputMessage_NumberPart: ");
-    //Serial.println(inputMessage_NumberPart);
-
     if (checkParity(inputString) == inputParity) {
       if (strcmp_P(inputMessage_TextPart, msg_OCTOPRINT) == 0) {
         printWithParity(msg_SWAPPER);
@@ -1255,47 +1269,38 @@ void loop() {
         load_insert(insertNumber);
         printWithParity(msg_OK);
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CONNECT) == 0) {
         updateLCD_line1(msg_CONNECT);
         unload_connect();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN) == 0) {
         updateLCD_line1(msg_PULLDOWN);
         unload_pulldown();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
         unload_deployCutter();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CUT) == 0) {
         updateLCD_line1(msg_CUT);
         unload_cut();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_AVOIDBIN) == 0) {
         updateLCD_line1(msg_AVOID_WASTE_BIN);
         unload_avoidBin();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_stowCutter) == 0) {
         updateLCD_line1(msg_STOW_CUTTER);
         unload_stowCutter();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_dumpWaste) == 0) {
         updateLCD_line1(msg_DUMP_WASTE);
         unload_dumpWaste();
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_unloadED_MESSAGE) == 0) {
         insertNumber = 0;
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
         printWithParity(msg_OK);
-        delay(3000);
       } else if (strcmp_P(inputMessage_TextPart, msg_SWAP_MESSAGE) == 0) {
         updateLCD_line1(insertNumber == 0 ? msg_SWAPPING_FORMAT_1 : msg_SWAPPING_FORMAT_2, insertNumber, inputMessage_NumberPart);
         printWithParity(msg_OK);
@@ -1303,20 +1308,23 @@ void loop() {
         updateLCD_line1(msg_DEPLOY_WIPER);
         wiper_deploy();
         printWithParity(msg_OK);
-        delay(3000);
         updateLCD_line1(msg_WIPER_DEPLOYED);
       } else if (strcmp_P(inputMessage_TextPart, msg_WIPER_STOW) == 0) {
         updateLCD_line1(msg_STOW_WIPER);
         wiper_stow();
         printWithParity(msg_OK);
-        delay(3000);
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
+      } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOn) == 0) {
+        boreAlignOn();
+        printWithParity(msg_OK);
+      } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOff) == 0) {
+        boreAlignOff();
+        printWithParity(msg_OK);
       } else {
         // Handle command not found
         printWithParity(msg_COMMAND_NOT_FOUND);
       }
-    }
-    else {
+    } else {
       printWithParity(msg_ParityCheckFailed);
     }
 
@@ -1325,5 +1333,3 @@ void loop() {
     stringComplete = false;
   }
 }
-
-
