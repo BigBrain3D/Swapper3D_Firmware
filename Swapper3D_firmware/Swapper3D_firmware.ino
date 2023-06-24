@@ -222,6 +222,7 @@ float pos_Tool_Holder_FirstTool = 15; //11.7; //11; //12; //2; //note: eeprom of
 bool toolIsLoaded = false;
 int CurrentTool = 0;
 
+int pos_Tool_Lock_Unlocked = 0;
 int pos_Tool_Lock_Locked = 0;
 int pos_Cutter_Rotate_Stowed = 0;
 bool LockToolPartWayThru = false;
@@ -252,7 +253,7 @@ const char* getServoInitials(byte WhichServo) {
 }
 
 
-void printWithParity(const char* PROGMEM message) {
+void printWithParity_P(const char* PROGMEM message) {
   char buffer[50];
   strcpy_P(buffer, message);
   int parity = checkParity(buffer);
@@ -261,6 +262,25 @@ void printWithParity(const char* PROGMEM message) {
   
   Serial.println(output);
 }
+
+  void printWithParity(char* message) {
+    int parity = checkParity(message);
+    char output[60];
+    snprintf(output, sizeof(output), "%s%d", message, parity);
+    
+    Serial.println(output);
+  }
+
+
+void PrintIntWithParityAsChar(int number) {
+  char numberStr[10];
+  itoa(number, numberStr, 10); // Convert the integer to a string
+  int parity = checkParity(numberStr); // Calculate the parity of the string
+  char output[60];
+  snprintf(output, sizeof(output), "%s%d", numberStr, parity);
+  Serial.println(output);
+}
+
 
 void updateLCD(const char* PROGMEM message1, const char* PROGMEM message2, ...) {
   char buffer1[50];
@@ -319,15 +339,18 @@ void updateLCD_line2(byte servo, int angle) {
   lcd.print(formatted_message);
 }
 
-char* generateMessage(byte servo, int angle) {
+char* generateMessage(byte stepNumber, byte servo, int angle) {
   const char* servo_name = getServoInitials(servo); // Assuming getServoName(0) returns "Tool_Rotate"
 
   char angle_str[10];
   itoa(angle, angle_str, 10);  // Convert angle to string
 
-  static char formatted_message[50];
-  sprintf(formatted_message, "S: %s    A: %s", servo_name, angle_str);
 
+
+  static char formatted_message[50];
+ sprintf(formatted_message, "ST:%d,  S:%s,  A:%s", stepNumber, servo_name, angle_str);
+
+//sprintf(formatted_message, "%s", servo_name);
   return formatted_message;
 }
 
@@ -377,14 +400,14 @@ void SetSwapStepLocations(){
 	int pulselength = 0;
 	
 	//changed out servo all should be off by same angle over last servo	
-int Adjustment_Tool_Rotate = map(EEPROM.read(0), 100, 140, -20, 20);
-int Adjustment_Tool_Height = map(EEPROM.read(1), 100, 140, -20, 20);
-int Adjustment_Tool_Lock = map(EEPROM.read(2), 100, 140, -20, 20);
-int Adjustment_QuickSwapHotend_Lock = map(EEPROM.read(3), 100, 140, -20, 20);
-int Adjustment_Holder_Rotate = map(EEPROM.read(4), 100, 140, -20, 20); 
-int Adjustment_Cutter_Rotate = map(EEPROM.read(5), 100, 140, -20, 20);
-int Adjustment_Cutter_Action = map(EEPROM.read(6), 100, 140, -20, 20);
-int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
+	int Adjustment_Tool_Rotate = map(EEPROM.read(0), 100, 140, -20, 20);
+	int Adjustment_Tool_Height = map(EEPROM.read(1), 100, 140, -20, 20);
+	int Adjustment_Tool_Lock = map(EEPROM.read(2), 100, 140, -20, 20);
+	int Adjustment_QuickSwapHotend_Lock = map(EEPROM.read(3), 100, 140, -20, 20);
+	int Adjustment_Holder_Rotate = map(EEPROM.read(4), 100, 140, -20, 20); 
+	int Adjustment_Cutter_Rotate = map(EEPROM.read(5), 100, 140, -20, 20);
+	int Adjustment_Cutter_Action = map(EEPROM.read(6), 100, 140, -20, 20);
+	int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
 
 
 //position variables
@@ -426,7 +449,7 @@ int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
 	//**** Tool Lock (TL) (micro 280d servo) ****
 	//Servo 2
 	//next line is starting first 1st position
-	int pos_Tool_Lock_Unlocked = 195 + Adjustment_Tool_Lock; //180
+	pos_Tool_Lock_Unlocked = 195 + Adjustment_Tool_Lock; //180
 	pos_Tool_Lock_Locked = 112 + Adjustment_Tool_Lock; //8 //7; //8; //standard move172degrees. 8;//now precision move +.5 //9;//8;//9; //8; //9; 13; 
 
 	//**** QuickSwap- Hotend Lock (QL) ****
@@ -839,6 +862,16 @@ int checkParity(char* message) {
   return ~count & 1; // returns 1 for odd parity, 0 for even parity
 }
 
+int checkIntParity(int number) {
+  int count = 0;
+  while (number) {
+    count++;
+    number = number & (number - 1);
+  }
+  return ~count & 1; // returns 1 for odd parity, 0 for even parity
+}
+
+
 
 //pass in the array containing all the steps, and the array of the degrees for each step
 //this will loop thru each step and if there is an error 
@@ -855,8 +888,8 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
   int currentStepOfProcess = 0;
   
   
-	Serial.print("# Steps:");
-	Serial.println(NumSteps);
+	//Serial.print("# Steps:");
+	//Serial.println(NumSteps);
 	
 	
   while (currentStepOfProcess < NumSteps)
@@ -866,9 +899,10 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
 					, ProcessSteps_degrees[currentStepOfProcess]);
 					
 
-    char* message = generateMessage(ProcessSteps_servoNumber[currentStepOfProcess]
-					, ProcessSteps_degrees[currentStepOfProcess]);
-    Serial.println(message);
+    char* message = generateMessage(currentStepOfProcess 
+                                    ,ProcessSteps_servoNumber[currentStepOfProcess]
+					                          , ProcessSteps_degrees[currentStepOfProcess]);
+    printWithParity(message);
 
 	  
     ProcessStep(ProcessSteps_servoNumber[currentStepOfProcess]
@@ -897,14 +931,14 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
       do 
       {
         buttonPress = analogRead(0);
-      } while (buttonPress < 600 || buttonPress > 700); //if button press then retry
+      } while (buttonPress < 600 || buttonPress > 700); //if S button press then retry
   
 		//lock the end tool before retry
       pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
       pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
       delay(200);
   
-      printWithParity(msg_ERROR_WAS_RESET);
+      printWithParity_P(msg_ERROR_WAS_RESET);
       updateLCD_line1(msg_LOADING);
       InErrorState = false;
     }
@@ -1082,14 +1116,14 @@ void ProcessStep(int currentServo
 	  delay(100);
 	  
       if(CheckButton_Pressed() && ErrorCheckingEnabed) {
-        printWithParity(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
+        printWithParity_P(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
         updateLCD(msg_ERROR_NOT_EMPTY, msg_S_TO_RETRY);
         InErrorState = true;
       } else {      
         if(CheckButton_Pressed()) {
-          printWithParity(msg_BUTTON_PRESSED);
+          printWithParity_P(msg_BUTTON_PRESSED);
         } else {
-          printWithParity(msg_BUTTON_NOT_PRESSED);
+          printWithParity_P(msg_BUTTON_NOT_PRESSED);
         }  
         InErrorState = false;
       }
@@ -1110,14 +1144,14 @@ void ProcessStep(int currentServo
 	  delay(100);
 
       if(!CheckButton_Pressed() && ErrorCheckingEnabed) {
-        printWithParity(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
+        printWithParity_P(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
         updateLCD(msg_ERROR_EMPTY, msg_S_TO_RETRY);
         InErrorState = true;
       } else {      
         if(CheckButton_Pressed()) {
-          printWithParity(msg_BUTTON_PRESSED);
+          printWithParity_P(msg_BUTTON_PRESSED);
         } else {
-          printWithParity(msg_BUTTON_NOT_PRESSED);
+          printWithParity_P(msg_BUTTON_NOT_PRESSED);
         }  
         InErrorState = false;
       }
@@ -1219,8 +1253,14 @@ void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
 //Bore alignment turned on. Tool Rotate Servo moved to position Under Extruder Connect With Nozzle Collar.
 //Bore alignment turned off. Tool Rotate Servo moved to position Butting The Tool To The Left Of Next.
 void boreAlignOn() {
-    // Set the Tool_Rotate servo to the desired position
+  //lock the insert into the end effector
 	int pulselength = 0;
+    servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Locked;
+    pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
+
+
+    // Set the Tool_Rotate servo to the desired position
     servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
     pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
@@ -1233,7 +1273,17 @@ void boreAlignOff() {
     servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
     pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
+
+    //wait for the end effector to be still
+    //then unlock the tool
+    delay(3000);
+    servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Unlocked;
+    pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
+
 }
+
+
 
 void loop() {
   if (stringComplete) {
@@ -1263,69 +1313,93 @@ void loop() {
 
     if (checkParity(inputString) == inputParity) {
       if (strcmp_P(inputMessage_TextPart, msg_OCTOPRINT) == 0) {
-        printWithParity(msg_SWAPPER);
+        printWithParity_P(msg_SWAPPER);
       } else if (strcmp_P(inputMessage_TextPart, msg_LOAD_INSERT) == 0) {
         insertNumber = inputMessage_NumberPart;
         load_insert(insertNumber);
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CONNECT) == 0) {
         updateLCD_line1(msg_CONNECT);
         unload_connect();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN) == 0) {
         updateLCD_line1(msg_PULLDOWN);
         unload_pulldown();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
         unload_deployCutter();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CUT) == 0) {
         updateLCD_line1(msg_CUT);
         unload_cut();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_AVOIDBIN) == 0) {
         updateLCD_line1(msg_AVOID_WASTE_BIN);
         unload_avoidBin();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_stowCutter) == 0) {
         updateLCD_line1(msg_STOW_CUTTER);
         unload_stowCutter();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_dumpWaste) == 0) {
         updateLCD_line1(msg_DUMP_WASTE);
         unload_dumpWaste();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unloadED_MESSAGE) == 0) {
         insertNumber = 0;
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_SWAP_MESSAGE) == 0) {
         updateLCD_line1(insertNumber == 0 ? msg_SWAPPING_FORMAT_1 : msg_SWAPPING_FORMAT_2, insertNumber, inputMessage_NumberPart);
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_WIPER_DEPLOY) == 0) {
         updateLCD_line1(msg_DEPLOY_WIPER);
         wiper_deploy();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
         updateLCD_line1(msg_WIPER_DEPLOYED);
       } else if (strcmp_P(inputMessage_TextPart, msg_WIPER_STOW) == 0) {
         updateLCD_line1(msg_STOW_WIPER);
         wiper_stow();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
       } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOn) == 0) {
         boreAlignOn();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOff) == 0) {
         boreAlignOff();
-        printWithParity(msg_OK);
+        printWithParity_P(msg_OK);
+      }  else if (strcmp_P(inputMessage_TextPart, msg_WIPER_STOW) == 0) {
+        updateLCD_line1(msg_STOW_WIPER);
+        wiper_stow();
+        printWithParity_P(msg_OK);
+        delay(3000);
+        updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
+      } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_MajorVersion) == 0) {
+        EEPROM.write(30, inputMessage_NumberPart);
+        printWithParity_P(msg_OK);
+      } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_MinorVersion) == 0) {
+        EEPROM.write(31, inputMessage_NumberPart);
+        printWithParity_P(msg_OK);
+      } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_PatchVersion) == 0) {
+        EEPROM.write(32, inputMessage_NumberPart);
+        printWithParity_P(msg_OK);
+      } else if (strcmp_P(inputMessage_TextPart, msg_ReadFromEeprom_MajorVersion) == 0) {
+        int majorVersion = EEPROM.read(30);
+          PrintIntWithParityAsChar(majorVersion);
+      } else if (strcmp_P(inputMessage_TextPart, msg_ReadFromEeprom_MinorVersion) == 0) {
+          int minorVersion = EEPROM.read(31);
+          PrintIntWithParityAsChar(minorVersion);
+      } else if (strcmp_P(inputMessage_TextPart, msg_ReadFromEeprom_PatchVersion) == 0) {
+          int patchVersion = EEPROM.read(32);
+          PrintIntWithParityAsChar(patchVersion);
       } else {
         // Handle command not found
-        printWithParity(msg_COMMAND_NOT_FOUND);
+        printWithParity_P(msg_COMMAND_NOT_FOUND);
       }
     } else {
-      printWithParity(msg_ParityCheckFailed);
+      printWithParity_P(msg_ParityCheckFailed);
     }
 
     memset(inputString, 0, inputStringSize);
