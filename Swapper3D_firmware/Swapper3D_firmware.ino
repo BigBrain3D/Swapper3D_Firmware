@@ -368,12 +368,10 @@ void ToolHolder_AlignToThisTool(int SelectThisTool){
 	float degreesPerTool = 14.4; //14.72; //computed angle is 14.4d per spline calced as 25T splines 360/25=14.4 //14.72; //last 14.80 //this works for 25T's but barely: 14.85; //19:14.95 slightly too much;
 	float degreesPositionOfSelectedTool = (float)SelectThisTool * degreesPerTool;
 
-//apply adjustment from EEPROM
-	pos_Tool_Holder_FirstTool = pos_Tool_Holder_FirstTool + Adjustment_HolderRotate;
 	
 	servos_currentAngle[s_ToolHolder_Rotate] = degreesPositionOfSelectedTool + pos_Tool_Holder_FirstTool;
 
-	localPulseLength = fMap(degreesPositionOfSelectedTool + pos_Tool_Holder_FirstTool, servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
+	localPulseLength = fMap(servos_currentAngle[s_ToolHolder_Rotate], servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
 
 	pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, localPulseLength);  
 	
@@ -410,6 +408,10 @@ void SetSwapStepLocations(){
 	int Adjustment_WasteCup_Action = map(EEPROM.read(7), 100, 140, -20, 20);
 
 
+	//apply adjustment from EEPROM
+	pos_Tool_Holder_FirstTool = pos_Tool_Holder_FirstTool + Adjustment_Holder_Rotate;
+	
+	
 //position variables
 	//Servo 0
 	//**** Tool Rotate (TR) ****
@@ -473,8 +475,8 @@ void SetSwapStepLocations(){
 	//**** Waste Cup Action (WA) (micro 280d servo) ****
 	//Servo 7
 	//next line is starting first 1st position
-	int pos_WasteCup_Action_Fill = 110 + Adjustment_WasteCup_Action; //0
-	int pos_WasteCup_Action_Dump = 99 + Adjustment_WasteCup_Action; //107
+	int pos_WasteCup_Action_Fill = 170 + Adjustment_WasteCup_Action; //110, 0
+	int pos_WasteCup_Action_Dump = 125 + Adjustment_WasteCup_Action; //99, 107
 
 
 	//void SetServoStartingPositions(){
