@@ -225,6 +225,8 @@ int CurrentTool = 0;
 int pos_Tool_Lock_Unlocked = 0;
 int pos_Tool_Lock_Locked = 0;
 int pos_Cutter_Rotate_Stowed = 0;
+int pos_QuickSwapHotend_Lock_Locked = 0;
+int pos_QuickSwapHotend_Lock_Unlocked = 0;
 bool LockToolPartWayThru = false;
 const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
@@ -451,14 +453,14 @@ void SetSwapStepLocations(){
 	//**** Tool Lock (TL) (micro 280d servo) ****
 	//Servo 2
 	//next line is starting first 1st position
-	pos_Tool_Lock_Unlocked = 195 + Adjustment_Tool_Lock; //180
-	pos_Tool_Lock_Locked = 112 + Adjustment_Tool_Lock; //8 //7; //8; //standard move172degrees. 8;//now precision move +.5 //9;//8;//9; //8; //9; 13; 
+	pos_Tool_Lock_Unlocked = 193 + Adjustment_Tool_Lock; //195, 180
+	pos_Tool_Lock_Locked = 102 + Adjustment_Tool_Lock; //112 //8 //7; //8; //standard move172degrees. 8;//now precision move +.5 //9;//8;//9; //8; //9; 13; 
 
 	//**** QuickSwap- Hotend Lock (QL) ****
 	//Servo 3
 	//next line is 1st starting first 1st position
-	int pos_QuickSwapHotend_Lock_Locked = 70 + Adjustment_QuickSwapHotend_Lock; //0
-	int pos_QuickSwapHotend_Lock_Unlocked = 104 + Adjustment_QuickSwapHotend_Lock; //34 //32; //33; //34; //35; //29;
+	pos_QuickSwapHotend_Lock_Locked = 70 + Adjustment_QuickSwapHotend_Lock; //0
+	pos_QuickSwapHotend_Lock_Unlocked = 104 + Adjustment_QuickSwapHotend_Lock; //34 //32; //33; //34; //35; //29;
 
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
@@ -1261,11 +1263,19 @@ void boreAlignOn() {
     pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
 
+	delay(200); //wait for lock to be in place
 
     // Set the Tool_Rotate servo to the desired position
     servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
     pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
+	
+	delay(500); //wait for lock to be in place
+	
+	//unlock the QuickSwap-Hotend
+    servos_currentAngle[s_QuickSwapHotend_Lock] = pos_QuickSwapHotend_Lock_Unlocked;
+    pulselength = map(servos_currentAngle[s_QuickSwapHotend_Lock], 0, servos_maxAngle[s_QuickSwapHotend_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_QuickSwapHotend_Lock], 0, pulselength);	
 }
 
 //pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext //tool arm stored
@@ -1282,6 +1292,13 @@ void boreAlignOff() {
     servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Unlocked;
     pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
+	
+	delay(500); //wait for lock to be in place
+	
+	//unlock the QuickSwap-Hotend
+    servos_currentAngle[s_QuickSwapHotend_Lock] = pos_QuickSwapHotend_Lock_Locked;
+    pulselength = map(servos_currentAngle[s_QuickSwapHotend_Lock], 0, servos_maxAngle[s_QuickSwapHotend_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_QuickSwapHotend_Lock], 0, pulselength);	
 
 }
 
