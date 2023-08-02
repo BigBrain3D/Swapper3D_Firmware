@@ -656,178 +656,178 @@ void SetSwapStepLocations(){
 //_msDelayAfterCommandSent
 //_stepType
 	//void SetProcessSteps_unload_pulldown(){
-	ProcessSteps_unload_pulldown_servoNumber[5] = s_Tool_Height; //down to cutting height
-	ProcessSteps_unload_pulldown_servoNumber[6] = s_Tool_Lock; 
-	ProcessSteps_unload_pulldown_servoNumber[7] = s_QuickSwapHotend_Lock;
+	ProcessSteps_unload_pulldown_servoNumber[0] = s_Tool_Height; //down to cutting height
+	ProcessSteps_unload_pulldown_servoNumber[1] = s_Tool_Lock; 
+	ProcessSteps_unload_pulldown_servoNumber[2] = s_QuickSwapHotend_Lock;
 	
-	ProcessSteps_unload_pulldown_degrees[5] = pos_Tool_Height_ToolLowered_CuttingHeight;
-	ProcessSteps_unload_pulldown_degrees[6] = pos_Tool_Lock_Locked;
-	ProcessSteps_unload_pulldown_degrees[7] = pos_QuickSwapHotend_Lock_Locked;
+	ProcessSteps_unload_pulldown_degrees[0] = pos_Tool_Height_ToolLowered_CuttingHeight;
+	ProcessSteps_unload_pulldown_degrees[1] = pos_Tool_Lock_Locked;
+	ProcessSteps_unload_pulldown_degrees[2] = pos_QuickSwapHotend_Lock_Locked;
 	
-	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[5] = 1; //lower to cutting height
-	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[6] = 0;
-	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[7] = 0;
+	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[0] = 1; //lower to cutting height
+	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[1] = 0;
+	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[2] = 0;
 	
-	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[5] = 0;
-	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[6] = 0; //110; //lock tool. lock moved to SetServoPosition()
-	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[7] = 0;
+	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[0] = 0;
+	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[1] = 0; //110; //lock tool. lock moved to SetServoPosition()
+	ProcessSteps_unload_pulldown_msDelayAfterCommandSent[2] = 0;
 	
-	ProcessSteps_unload_pulldown_stepType[5] = eeExtrude; //lower to cutting height. extrude stage 2
-	ProcessSteps_unload_pulldown_stepType[6] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
-	ProcessSteps_unload_pulldown_stepType[7] = eeRegularStep;
+	ProcessSteps_unload_pulldown_stepType[0] = eeExtrude; //lower to cutting height. extrude stage 2
+	ProcessSteps_unload_pulldown_stepType[1] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
+	ProcessSteps_unload_pulldown_stepType[2] = eeRegularStep;
 
 
 	//void SetProcessSteps_unload_deployCutter(){
-	ProcessSteps_unload_deployCutter_servoNumber[8] = s_Cutter_Rotate;
+	ProcessSteps_unload_deployCutter_servoNumber[0] = s_Cutter_Rotate;
 	
-	ProcessSteps_unload_deployCutter_degrees[8] = pos_Cutter_Rotate_Cutting;
+	ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting;
 	
-	ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[8] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
+	ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
 	
-	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[8] = 55; //650; //550; //500; //190; //cutter rotate
+	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[0] = 55; //650; //550; //500; //190; //cutter rotate
 	
-	ProcessSteps_unload_deployCutter_stepType[8] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
+	ProcessSteps_unload_deployCutter_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
 	
 
 	//void SetProcessSteps_unload_cut(){
-	ProcessSteps_unload_cut_servoNumber[9] = s_Cutter_Action;
-	ProcessSteps_unload_cut_servoNumber[10] = s_Cutter_Action; //here
+	ProcessSteps_unload_cut_servoNumber[0] = s_Cutter_Action;
+	ProcessSteps_unload_cut_servoNumber[1] = s_Cutter_Action; //here
 	
-	ProcessSteps_unload_cut_degrees[9] = pos_Cutter_Action_Cut;
-	ProcessSteps_unload_cut_degrees[10] = pos_Cutter_Action_Open; //here
+	ProcessSteps_unload_cut_degrees[0] = pos_Cutter_Action_Cut;
+	ProcessSteps_unload_cut_degrees[1] = pos_Cutter_Action_Open; //here
 	
-	ProcessSteps_unload_cut_msDelayPerDegreeMoved[9] = 0;
-	ProcessSteps_unload_cut_msDelayPerDegreeMoved[10] = 0;//here
+	ProcessSteps_unload_cut_msDelayPerDegreeMoved[0] = 0;
+	ProcessSteps_unload_cut_msDelayPerDegreeMoved[1] = 0;//here
 	
-	ProcessSteps_unload_cut_msDelayAfterCommandSent[9] = 60; //550; //370; //130; //cut
-	ProcessSteps_unload_cut_msDelayAfterCommandSent[10] = 20; //250; //370;//130; //open //here
+	ProcessSteps_unload_cut_msDelayAfterCommandSent[0] = 60; //550; //370; //130; //cut
+	ProcessSteps_unload_cut_msDelayAfterCommandSent[1] = 20; //250; //370;//130; //open //here
 	
-	ProcessSteps_unload_cut_stepType[9] = eeRegularStep;
-	ProcessSteps_unload_cut_stepType[10] = eeRegularStep; //open cutters //here
+	ProcessSteps_unload_cut_stepType[0] = eeRegularStep;
+	ProcessSteps_unload_cut_stepType[1] = eeRegularStep; //open cutters //here
 
 
 	//void SetProcessSteps_unload_avoidBin(){
-	ProcessSteps_unload_avoidBin_servoNumber[11] = s_Tool_Height;
-	ProcessSteps_unload_avoidBin_servoNumber[12] = s_Tool_Rotate;
-	ProcessSteps_unload_avoidBin_servoNumber[13] = s_Cutter_Action;
-	ProcessSteps_unload_avoidBin_servoNumber[14] = s_Cutter_Action;
+	ProcessSteps_unload_avoidBin_servoNumber[0] = s_Tool_Height;
+	ProcessSteps_unload_avoidBin_servoNumber[1] = s_Tool_Rotate;
+	ProcessSteps_unload_avoidBin_servoNumber[2] = s_Cutter_Action;
+	ProcessSteps_unload_avoidBin_servoNumber[3] = s_Cutter_Action;
 	
-	ProcessSteps_unload_avoidBin_degrees[11] = pos_Tool_Height_ToolLowered_BelowCutterJaws;
-	ProcessSteps_unload_avoidBin_degrees[12] = pos_Tool_Rotate_PastWasteCup;
-	ProcessSteps_unload_avoidBin_degrees[13] = pos_Cutter_Action_Cut;
-	ProcessSteps_unload_avoidBin_degrees[14] = pos_Cutter_Action_Open;
+	ProcessSteps_unload_avoidBin_degrees[0] = pos_Tool_Height_ToolLowered_BelowCutterJaws;
+	ProcessSteps_unload_avoidBin_degrees[1] = pos_Tool_Rotate_PastWasteCup;
+	ProcessSteps_unload_avoidBin_degrees[2] = pos_Cutter_Action_Cut;
+	ProcessSteps_unload_avoidBin_degrees[3] = pos_Cutter_Action_Open;
 	
-	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[11] = 0;
-	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[12] = 0;
-	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[13] = 0;
-	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[14] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[0] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[1] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[2] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[3] = 0;
 	
-	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[11] = 0; //50; //uncomment for Palette
-	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[12] = 0; //90; //uncomment for Palette
-	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[13] = 0; //370; //130; //cut //uncomment for Palette
-	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[14] = 0; //370; //130; //open //uncomment for Palette
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[0] = 0; //50; //uncomment for Palette
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[1] = 0; //90; //uncomment for Palette
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[2] = 0; //370; //130; //cut //uncomment for Palette
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[3] = 0; //370; //130; //open //uncomment for Palette
 	
-    ProcessSteps_unload_avoidBin_stepType[11] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
-	ProcessSteps_unload_avoidBin_stepType[12] = eeRegularStep;
-	ProcessSteps_unload_avoidBin_stepType[13] = eeRegularStep;
-	ProcessSteps_unload_avoidBin_stepType[14] = eeRegularStep;
+    ProcessSteps_unload_avoidBin_stepType[0] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
+	ProcessSteps_unload_avoidBin_stepType[1] = eeRegularStep;
+	ProcessSteps_unload_avoidBin_stepType[2] = eeRegularStep;
+	ProcessSteps_unload_avoidBin_stepType[3] = eeRegularStep;
 
 
 	//void SetProcessSteps_unload_stowCutter(){
-	ProcessSteps_unload_stowCutter_servoNumber[15] = s_Cutter_Rotate;
+	ProcessSteps_unload_stowCutter_servoNumber[0] = s_Cutter_Rotate;
 	
-	ProcessSteps_unload_stowCutter_degrees[15] = pos_Cutter_Rotate_Stowed;
+	ProcessSteps_unload_stowCutter_degrees[0] = pos_Cutter_Rotate_Stowed;
 	
-	ProcessSteps_unload_stowCutter_msDelayPerDegreeMoved[15] = 0;//go full speed so that the tool can be stowed symultaneously //6 slow to keep the servo from dying //0; //cutter rotate
+	ProcessSteps_unload_stowCutter_msDelayPerDegreeMoved[0] = 0;//go full speed so that the tool can be stowed symultaneously //6 slow to keep the servo from dying //0; //cutter rotate
 	
-	ProcessSteps_unload_stowCutter_msDelayAfterCommandSent[15] = 0; //cutter rotate stowed //75; //50; //100; //200; //100; //50;//need slight delay just for the cutter to rotate a little away from the filament and break the strand //130;s_Cutter_Rotate no delay needed when stowing the cutter
+	ProcessSteps_unload_stowCutter_msDelayAfterCommandSent[0] = 0; //cutter rotate stowed //75; //50; //100; //200; //100; //50;//need slight delay just for the cutter to rotate a little away from the filament and break the strand //130;s_Cutter_Rotate no delay needed when stowing the cutter
 	
-	ProcessSteps_unload_stowCutter_stepType[15] = eeRetract; //eeRegularStep;
+	ProcessSteps_unload_stowCutter_stepType[0] = eeRetract; //eeRegularStep;
 
 
 	//void SetProcessSteps_unload_stowInsert(){
-	ProcessSteps_unload_stowInsert_servoNumber[16] = s_Tool_Height; //lowest height
-	ProcessSteps_unload_stowInsert_servoNumber[17] = s_Tool_Rotate; //to check button
-	ProcessSteps_unload_stowInsert_servoNumber[18] = s_Tool_Rotate;
-	ProcessSteps_unload_stowInsert_servoNumber[19] = s_Tool_Height;
-	ProcessSteps_unload_stowInsert_servoNumber[20] = s_Tool_Lock;
-	ProcessSteps_unload_stowInsert_servoNumber[21] = s_Tool_Height;
-	ProcessSteps_unload_stowInsert_servoNumber[22] = s_Tool_Height;
-	ProcessSteps_unload_stowInsert_servoNumber[23] = s_Tool_Rotate;
-	ProcessSteps_unload_stowInsert_servoNumber[24] = s_Tool_Rotate;
-	ProcessSteps_unload_stowInsert_servoNumber[25] = s_Tool_Height;
-	ProcessSteps_unload_stowInsert_servoNumber[26] = s_Tool_Rotate;
-	ProcessSteps_unload_stowInsert_servoNumber[27] = s_Tool_Rotate;
+	ProcessSteps_unload_stowInsert_servoNumber[0] = s_Tool_Height; //lowest height
+	ProcessSteps_unload_stowInsert_servoNumber[1] = s_Tool_Rotate; //to check button
+	ProcessSteps_unload_stowInsert_servoNumber[2] = s_Tool_Rotate;
+	ProcessSteps_unload_stowInsert_servoNumber[3] = s_Tool_Height;
+	ProcessSteps_unload_stowInsert_servoNumber[4] = s_Tool_Lock;
+	ProcessSteps_unload_stowInsert_servoNumber[5] = s_Tool_Height;
+	ProcessSteps_unload_stowInsert_servoNumber[6] = s_Tool_Height;
+	ProcessSteps_unload_stowInsert_servoNumber[7] = s_Tool_Rotate;
+	ProcessSteps_unload_stowInsert_servoNumber[8] = s_Tool_Rotate;
+	ProcessSteps_unload_stowInsert_servoNumber[9] = s_Tool_Height;
+	ProcessSteps_unload_stowInsert_servoNumber[10] = s_Tool_Rotate;
+	ProcessSteps_unload_stowInsert_servoNumber[11] = s_Tool_Rotate;
 	
-	ProcessSteps_unload_stowInsert_degrees[16] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_unload_stowInsert_degrees[17] = pos_Tool_Rotate_ButtonToolCheck; //should have tool
-	ProcessSteps_unload_stowInsert_degrees[18] = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //ready to lift into position
-	ProcessSteps_unload_stowInsert_degrees[19] = pos_Tool_Height_ToolLoweredButStillInHolder;
-	ProcessSteps_unload_stowInsert_degrees[20] = pos_Tool_Lock_Unlocked; 
-	ProcessSteps_unload_stowInsert_degrees[21] = pos_Tool_Height_ToolFullyInsertedInHolder;
-	ProcessSteps_unload_stowInsert_degrees[22] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
-	ProcessSteps_unload_stowInsert_degrees[23] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
-	ProcessSteps_unload_stowInsert_degrees[24] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
-	ProcessSteps_unload_stowInsert_degrees[25] = pos_Tool_Height_LowestLevel;
-	ProcessSteps_unload_stowInsert_degrees[26] = pos_Tool_Rotate_ButtonToolCheck;
-	ProcessSteps_unload_stowInsert_degrees[27] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
+	ProcessSteps_unload_stowInsert_degrees[0] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_unload_stowInsert_degrees[1] = pos_Tool_Rotate_ButtonToolCheck; //should have tool
+	ProcessSteps_unload_stowInsert_degrees[2] = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //ready to lift into position
+	ProcessSteps_unload_stowInsert_degrees[3] = pos_Tool_Height_ToolLoweredButStillInHolder;
+	ProcessSteps_unload_stowInsert_degrees[4] = pos_Tool_Lock_Unlocked; 
+	ProcessSteps_unload_stowInsert_degrees[5] = pos_Tool_Height_ToolFullyInsertedInHolder;
+	ProcessSteps_unload_stowInsert_degrees[6] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
+	ProcessSteps_unload_stowInsert_degrees[7] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
+	ProcessSteps_unload_stowInsert_degrees[8] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
+	ProcessSteps_unload_stowInsert_degrees[9] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_unload_stowInsert_degrees[10] = pos_Tool_Rotate_ButtonToolCheck;
+	ProcessSteps_unload_stowInsert_degrees[11] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
 	
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[16] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[17] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[18] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[19] = 0; //60;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[20] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[21] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[22] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[23] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[24] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[25] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[26] = 0;
-	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[27] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[0] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[1] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[2] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[3] = 0; //60;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[4] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[5] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[6] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[7] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[8] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[9] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[10] = 0;
+	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[11] = 0;
 	
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[16] = 7;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[17] = 100; //700; //200; //button check should have tool
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[18] = 8;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[19] = 18;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[20] = 0; //130;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[21] = 8;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[22] = 7;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[23] = 30; //400; //50; //release from hotend which is now stowed
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[24] = 5;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[25] = 35; //150; //lower to lowest level
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[26] = 40; //300; //180; button check should be empty
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[27] = 10;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[0] = 7;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[1] = 100; //700; //200; //button check should have tool
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[2] = 8;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[3] = 18;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[4] = 0; //130;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[5] = 8;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[6] = 7;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[7] = 30; //400; //50; //release from hotend which is now stowed
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[8] = 5;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[9] = 35; //150; //lower to lowest level
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[10] = 40; //300; //180; button check should be empty
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[11] = 10;
 	
-	ProcessSteps_unload_stowInsert_stepType[16] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[17] = eeButtonCheck_HoldingTool;
-	ProcessSteps_unload_stowInsert_stepType[18] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[19] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[20] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[21] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[22] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[23] = eeToolHolderPrepRotate;
-	ProcessSteps_unload_stowInsert_stepType[24] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[25] = eeRegularStep;
-	ProcessSteps_unload_stowInsert_stepType[26] = eeButtonCheck_Empty;
-	ProcessSteps_unload_stowInsert_stepType[27] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[0] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[1] = eeButtonCheck_HoldingTool;
+	ProcessSteps_unload_stowInsert_stepType[2] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[3] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[4] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[5] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[6] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[7] = eeToolHolderPrepRotate;
+	ProcessSteps_unload_stowInsert_stepType[8] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[9] = eeRegularStep;
+	ProcessSteps_unload_stowInsert_stepType[10] = eeButtonCheck_Empty;
+	ProcessSteps_unload_stowInsert_stepType[11] = eeRegularStep;
 
 
 	//void SetProcessSteps_unload_dumpWaste(){
-	ProcessSteps_unload_dumpWaste_servoNumber[28] = s_WasteCup_Action;
-	ProcessSteps_unload_dumpWaste_servoNumber[29] = s_WasteCup_Action; 
+	ProcessSteps_unload_dumpWaste_servoNumber[0] = s_WasteCup_Action;
+	ProcessSteps_unload_dumpWaste_servoNumber[1] = s_WasteCup_Action; 
 
-	ProcessSteps_unload_dumpWaste_degrees[28] = pos_WasteCup_Action_Dump;
-	ProcessSteps_unload_dumpWaste_degrees[29] = pos_WasteCup_Action_Fill;
+	ProcessSteps_unload_dumpWaste_degrees[0] = pos_WasteCup_Action_Dump;
+	ProcessSteps_unload_dumpWaste_degrees[1] = pos_WasteCup_Action_Fill;
 	
 	
-	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[28] = 0;
-	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[29] = 0;
+	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[0] = 0;
+	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[1] = 0;
 
-	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[28] = 18;
-	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[29] = 10;
+	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[0] = 18;
+	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[1] = 10;
 
-	ProcessSteps_unload_dumpWaste_stepType[28] = eeRegularStep;
-	ProcessSteps_unload_dumpWaste_stepType[29] = eeRegularStep;
+	ProcessSteps_unload_dumpWaste_stepType[0] = eeRegularStep;
+	ProcessSteps_unload_dumpWaste_stepType[1] = eeRegularStep;
 }
 
 
