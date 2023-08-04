@@ -981,6 +981,7 @@ void ProcessStep(int currentServo
 				, int msDelayAfterCommandSent
 				, int stepType) {
 	
+	byte slowDownDegrees = 8;
   int pulselength = 0;
   byte slowSpeed = 10;
   int slowMoveDegrees = targetAngle * 0.1;
@@ -995,7 +996,7 @@ void ProcessStep(int currentServo
 	  //to avoid knocking the wires off the button
 		
 	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*1.25, msDelayPerDegreeMoved);
+      SetServoPosition(currentServo, targetAngle + slowDownDegrees, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
 	  
 	  //slow move for 10%
@@ -1023,7 +1024,7 @@ void ProcessStep(int currentServo
 	  //to avoid knocking the wires off the button
 		
 	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*1.25, msDelayPerDegreeMoved);
+      SetServoPosition(currentServo, targetAngle + slowDownDegrees, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
 	  
 	  //slow move for 10%
@@ -1167,8 +1168,8 @@ void load_insert(int toolToLoad) {
 
 	ExecuteSteps(ProcessSteps_LoadTool_servoNumber
 				,ProcessSteps_LoadTool_degrees
-				,ProcessSteps_LoadTool_msDelayAfterCommandSent
 				,ProcessSteps_LoadTool_msDelayPerDegreeMoved
+				,ProcessSteps_LoadTool_msDelayAfterCommandSent
 				,ProcessSteps_LoadTool_stepType
 				,numOfProcessSteps_LoadTool);
 }
@@ -1176,8 +1177,8 @@ void load_insert(int toolToLoad) {
 void unload_connect(){  
 	ExecuteSteps(ProcessSteps_unload_connect_servoNumber
 				,ProcessSteps_unload_connect_degrees
-				,ProcessSteps_unload_connect_msDelayAfterCommandSent
 				,ProcessSteps_unload_connect_msDelayPerDegreeMoved
+				,ProcessSteps_unload_connect_msDelayAfterCommandSent
 				,ProcessSteps_unload_connect_stepType
 				,numOfProcessSteps_unload_connect);
 }
@@ -1185,8 +1186,8 @@ void unload_connect(){
 void unload_pulldown(){
 	ExecuteSteps(ProcessSteps_unload_pulldown_servoNumber
 				,ProcessSteps_unload_pulldown_degrees
-				,ProcessSteps_unload_pulldown_msDelayAfterCommandSent
 				,ProcessSteps_unload_pulldown_msDelayPerDegreeMoved
+				,ProcessSteps_unload_pulldown_msDelayAfterCommandSent
 				,ProcessSteps_unload_pulldown_stepType
 				,numOfProcessSteps_unload_pulldown);
 }
@@ -1194,8 +1195,8 @@ void unload_pulldown(){
 void unload_deployCutter(){
 	ExecuteSteps(ProcessSteps_unload_deployCutter_servoNumber
 				,ProcessSteps_unload_deployCutter_degrees
-				,ProcessSteps_unload_deployCutter_msDelayAfterCommandSent
 				,ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved
+				,ProcessSteps_unload_deployCutter_msDelayAfterCommandSent
 				,ProcessSteps_unload_deployCutter_stepType
 				,numOfProcessSteps_unload_deployCutter);
 }
@@ -1203,8 +1204,8 @@ void unload_deployCutter(){
 void unload_cut(){
 	ExecuteSteps(ProcessSteps_unload_cut_servoNumber
 				,ProcessSteps_unload_cut_degrees
-				,ProcessSteps_unload_cut_msDelayAfterCommandSent
 				,ProcessSteps_unload_cut_msDelayPerDegreeMoved
+				,ProcessSteps_unload_cut_msDelayAfterCommandSent
 				,ProcessSteps_unload_cut_stepType
 				,numOfProcessSteps_unload_cut);
 }
@@ -1213,8 +1214,8 @@ void unload_cut(){
 void unload_avoidBin(){
 	ExecuteSteps(ProcessSteps_unload_avoidBin_servoNumber
 				,ProcessSteps_unload_avoidBin_degrees
-				,ProcessSteps_unload_avoidBin_msDelayAfterCommandSent
 				,ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved
+				,ProcessSteps_unload_avoidBin_msDelayAfterCommandSent
 				,ProcessSteps_unload_avoidBin_stepType
 				,numOfProcessSteps_unload_avoidBin);
 }
@@ -1222,8 +1223,8 @@ void unload_avoidBin(){
 void unload_stowCutter(){
 	ExecuteSteps(ProcessSteps_unload_stowCutter_servoNumber
 				,ProcessSteps_unload_stowCutter_degrees
-				,ProcessSteps_unload_stowCutter_msDelayAfterCommandSent
 				,ProcessSteps_unload_stowCutter_msDelayPerDegreeMoved
+				,ProcessSteps_unload_stowCutter_msDelayAfterCommandSent
 				,ProcessSteps_unload_stowCutter_stepType
 				,numOfProcessSteps_unload_stowCutter);
 	
@@ -1232,8 +1233,8 @@ void unload_stowCutter(){
 void unload_stowInsert(){
 	ExecuteSteps(ProcessSteps_unload_stowInsert_servoNumber
 				,ProcessSteps_unload_stowInsert_degrees
-				,ProcessSteps_unload_stowInsert_msDelayAfterCommandSent
 				,ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved
+				,ProcessSteps_unload_stowInsert_msDelayAfterCommandSent
 				,ProcessSteps_unload_stowInsert_stepType
 				,numOfProcessSteps_unload_stowInsert);
 
@@ -1244,8 +1245,8 @@ void unload_stowInsert(){
 void unload_dumpWaste(){
 	ExecuteSteps(ProcessSteps_unload_dumpWaste_servoNumber
 				,ProcessSteps_unload_dumpWaste_degrees
-				,ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent
 				,ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved
+				,ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent
 				,ProcessSteps_unload_dumpWaste_stepType
 				,numOfProcessSteps_unload_dumpWaste);
 }
@@ -1254,6 +1255,7 @@ void unload_dumpWaste(){
 void wiper_deploy(){
 	int pulselength = map(random(110, 120), 0, servos_maxAngle[s_Cutter_Rotate], servo_pwm_min, servo_pwm_max); //was random(115, 125)
 	pwm.setPWM(servos_pin[s_Cutter_Rotate], 0, pulselength);
+	delay(200);
 }
 
 //Stow the wiper with random delay
@@ -1261,6 +1263,7 @@ void wiper_stow(){
 	random(0, 15);
 	int pulselength = map(pos_Cutter_Rotate_Stowed, 0, servos_maxAngle[s_Cutter_Rotate], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Cutter_Rotate], 0, pulselength);
+	delay(200);
 }
 
 
