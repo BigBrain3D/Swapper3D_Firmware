@@ -995,7 +995,7 @@ void ProcessStep(int currentServo
 	  //to avoid knocking the wires off the button
 		
 	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*.5, msDelayPerDegreeMoved);
+      SetServoPosition(currentServo, targetAngle*1.25, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
 	  
 	  //slow move for 10%
@@ -1023,7 +1023,7 @@ void ProcessStep(int currentServo
 	  //to avoid knocking the wires off the button
 		
 	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*.5, msDelayPerDegreeMoved);
+      SetServoPosition(currentServo, targetAngle*1.25, msDelayPerDegreeMoved);
       delay(msDelayAfterCommandSent);
 	  
 	  //slow move for 10%
