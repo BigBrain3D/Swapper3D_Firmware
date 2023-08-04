@@ -255,6 +255,18 @@ const char* getServoInitials(byte WhichServo) {
 }
 
 
+int checkParity(char* message) {
+  int count = 0;
+  for (int i = 0; i < strlen(message); i++) {
+    int value = message[i];
+    while (value) {
+      count++;
+      value = value & (value - 1);
+    }
+  }
+  return ~count & 1; // returns 1 for odd parity, 0 for even parity
+}
+
 void printWithParity_P(const char* PROGMEM message) {
   char buffer[50];
   strcpy_P(buffer, message);
@@ -341,6 +353,32 @@ void updateLCD_line2(byte servo, int angle) {
   lcd.print(formatted_message);
 }
 
+void updateLCD_line2_with_step(byte servo, int angle, int step) {
+  char step_str[10];
+  itoa(step, step_str, 10);  // Convert step to string, adding 1 to start from 1
+
+  const char* servo_name = getServoInitials(servo); 
+
+  char angle_str[10];
+  itoa(angle, angle_str, 10);  // Convert angle to string
+
+  char formatted_message[50];
+  sprintf(formatted_message, "%s, S: %s, A: %s", step_str, servo_name, angle_str);
+
+  // Now print the message on the LCD
+  lcd.setCursor(0, 1);
+  for (int i = 0; i < 16; i++) {
+    lcd.write(' ');  // Clear the line by writing spaces
+  }
+  lcd.print(formatted_message);
+
+  // Print the same message to the serial port
+  Serial.println(formatted_message);
+}
+
+
+
+
 char* generateMessage(byte stepNumber, byte servo, int angle) {
   const char* servo_name = getServoInitials(servo); // Assuming getServoName(0) returns "Tool_Rotate"
 
@@ -356,6 +394,17 @@ char* generateMessage(byte stepNumber, byte servo, int angle) {
   return formatted_message;
 }
 
+
+
+int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM){  
+  int angleRange = MaxAngle - MinAngle;
+  int pwmRange = maxPWM - minPWM;
+  
+  float desiredAnglePercentOfRange = desiredAngle / angleRange;
+  float pwmByDesiredAngle = float(pwmRange) * float(desiredAnglePercentOfRange) + float(minPWM);
+
+  return pwmByDesiredAngle;
+}
 
 
 //**** Holder Rotate (HR) ****
@@ -383,17 +432,6 @@ void ToolHolder_AlignToThisTool(int SelectThisTool){
 
 	CurrentTool = SelectThisTool;  
 }
-
-int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM){  
-  int angleRange = MaxAngle - MinAngle;
-  int pwmRange = maxPWM - minPWM;
-  
-  float desiredAnglePercentOfRange = desiredAngle / angleRange;
-  float pwmByDesiredAngle = float(pwmRange) * float(desiredAnglePercentOfRange) + float(minPWM);
-
-  return pwmByDesiredAngle;
-}
-
 
 
 void SetSwapStepLocations(){
@@ -854,28 +892,191 @@ void setup() {
 
 
 
-int checkParity(char* message) {
-  int count = 0;
-  for (int i = 0; i < strlen(message); i++) {
-    int value = message[i];
-    while (value) {
-      count++;
-      value = value & (value - 1);
-    }
-  }
-  return ~count & 1; // returns 1 for odd parity, 0 for even parity
+// int checkIntParity(int number) {
+  // int count = 0;
+  // while (number) {
+    // count++;
+    // number = number & (number - 1);
+  // }
+  // return ~count & 1; // returns 1 for odd parity, 0 for even parity
+// }
+
+
+bool CheckButton_Pressed()
+{
+	delay(10);
+	
+	// if(digitalRead(CheckButton_Pin)==1)
+	if(analogRead(CheckButton_Pin) > 1020)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
-int checkIntParity(int number) {
-  int count = 0;
-  while (number) {
-    count++;
-    number = number & (number - 1);
+
+void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
+{
+	int pulselength = 0;
+	int currentAngle = servos_currentAngle[ServoNum];
+	int angleDifference = TargetAngle - currentAngle;
+
+	int msCountedBeforeLock = 0;
+
+  //if the msDelay is zero then don't use a loop
+  if(msDelay == 0)
+  {
+      servos_currentAngle[ServoNum] = TargetAngle;  
+      pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
+      pwm.setPWM(servos_pin[ServoNum], 0, pulselength); 
   }
-  return ~count & 1; // returns 1 for odd parity, 0 for even parity
+  //else use a loop to inject the delay and fake accel
+  else
+  {
+  	if (angleDifference > 0)
+  	{  	
+  		for(int i = currentAngle; i <= TargetAngle; i++)
+  		{
+  			servos_currentAngle[ServoNum] = i;  
+  			pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
+  			pwm.setPWM(servos_pin[ServoNum], 0, pulselength);	
+  			delay(msDelay);
+			
+			
+			//deploy the tool lock part way thru the extrude
+			if (LockToolPartWayThru)
+			{
+				msCountedBeforeLock += msDelay;
+
+				//lock the tool
+				if(msCountedBeforeLock >= numMsUntilLock)
+				{
+					LockToolPartWayThru = false;
+					servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Locked;
+					pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
+					pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);	
+				}
+			}
+  		}	
+  	}
+  	else
+  	{
+  		for(int i = currentAngle; i >= TargetAngle; i--)
+  		{
+  			servos_currentAngle[ServoNum] = i;  
+  			pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
+  			pwm.setPWM(servos_pin[ServoNum], 0, pulselength);	
+  			delay(msDelay);
+  		}	
+  	}
+  }
 }
 
+void ProcessStep(int currentServo
+				, int targetAngle
+				, int msDelayPerDegreeMoved 
+				, int msDelayAfterCommandSent
+				, int stepType) {
+	
+  int pulselength = 0;
+  byte slowSpeed = 10;
+  int slowMoveDegrees = targetAngle * 0.1;
+  int msDelayAfterSlowCommandSent = slowMoveDegrees * (msDelayPerDegreeMoved / slowSpeed);
+	  
 
+  switch(stepType) {
+    //check to make sure the end effector is clear of inserts
+    case eeButtonCheck_Empty:	
+	  //split the button press into 2 parts
+	  //fast move and slow move 
+	  //to avoid knocking the wires off the button
+		
+	  //fast move for 90%
+      SetServoPosition(currentServo, targetAngle*.5, msDelayPerDegreeMoved);
+      delay(msDelayAfterCommandSent);
+	  
+	  //slow move for 10%
+      SetServoPosition(currentServo, targetAngle, slowSpeed);
+	  delay(100);
+	  
+      if(CheckButton_Pressed() && ErrorCheckingEnabed) {
+        printWithParity_P(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
+        updateLCD(msg_ERROR_NOT_EMPTY, msg_S_TO_RETRY);
+        InErrorState = true;
+      } else {      
+        if(CheckButton_Pressed()) {
+          printWithParity_P(msg_BUTTON_PRESSED);
+        } else {
+          printWithParity_P(msg_BUTTON_NOT_PRESSED);
+        }  
+        InErrorState = false;
+      }
+      break;
+      
+    //check to make sure the end effector is holding an insert
+    case eeButtonCheck_HoldingTool:	
+	  //split the button press into 2 parts
+	  //fast move and slow move 
+	  //to avoid knocking the wires off the button
+		
+	  //fast move for 90%
+      SetServoPosition(currentServo, targetAngle*.5, msDelayPerDegreeMoved);
+      delay(msDelayAfterCommandSent);
+	  
+	  //slow move for 10%
+      SetServoPosition(currentServo, targetAngle, slowSpeed);
+	  delay(100);
+
+      if(!CheckButton_Pressed() && ErrorCheckingEnabed) {
+        printWithParity_P(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
+        updateLCD(msg_ERROR_EMPTY, msg_S_TO_RETRY);
+        InErrorState = true;
+      } else {      
+        if(CheckButton_Pressed()) {
+          printWithParity_P(msg_BUTTON_PRESSED);
+        } else {
+          printWithParity_P(msg_BUTTON_NOT_PRESSED);
+        }  
+        InErrorState = false;
+      }
+      break;
+
+    case eeToolHolderPrepRotate:
+      servos_currentAngle[s_ToolHolder_Rotate] = servos_currentAngle[s_ToolHolder_Rotate] + eeToolHolderPrepRotate_degrees;
+      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate], servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
+      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
+
+      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
+
+      delay(msDelayAfterCommandSent);
+      break;
+      
+    case eeToolHolderPrepUNrotate:
+      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved); //rotate tool actuator
+      delay(70);
+      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate] - eeToolHolderPrepUNrotate_degrees, servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
+      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
+      delay(msDelayAfterCommandSent);
+      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate], servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
+      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
+      break;
+      
+    case eeRegularStep:
+      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
+      delay(msDelayAfterCommandSent);
+      break;
+      
+    case eeAddHalfDegreePrecision:
+      int precisionPulseLength = 0;
+      precisionPulseLength = fMap((float)targetAngle + (float)0.5, 0, servos_maxAngle[currentServo], servo_pwm_min, servo_pwm_max);
+      pwm.setPWM(servos_pin[currentServo], 0, precisionPulseLength);
+      delay(msDelayAfterCommandSent);
+      break;
+  }
+}
 
 //pass in the array containing all the steps, and the array of the degrees for each step
 //this will loop thru each step and if there is an error 
@@ -899,14 +1100,20 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
   while (currentStepOfProcess < NumSteps)
   {
 	
-    updateLCD_line2(ProcessSteps_servoNumber[currentStepOfProcess]
-					, ProcessSteps_degrees[currentStepOfProcess]);
-					
+    //updateLCD_line2(ProcessSteps_servoNumber[currentStepOfProcess]
+	//				, ProcessSteps_degrees[currentStepOfProcess]);
+		
+
+	updateLCD_line2_with_step(ProcessSteps_servoNumber[currentStepOfProcess]
+							, ProcessSteps_degrees[currentStepOfProcess]
+							, currentStepOfProcess);	
+
+							
 
     char* message = generateMessage(currentStepOfProcess 
                                     ,ProcessSteps_servoNumber[currentStepOfProcess]
 					                          , ProcessSteps_degrees[currentStepOfProcess]);
-    printWithParity(message);
+  //printWithParity(message);
 
 	  
     ProcessStep(ProcessSteps_servoNumber[currentStepOfProcess]
@@ -950,6 +1157,7 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
   
   currentStepOfProcess = 0;
 }
+
 
 
 void load_insert(int toolToLoad) {    
@@ -1077,181 +1285,6 @@ void serialEvent() {
 
 
 
-bool CheckButton_Pressed()
-{
-	delay(10);
-	
-	// if(digitalRead(CheckButton_Pin)==1)
-	if(analogRead(CheckButton_Pin) > 1020)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void ProcessStep(int currentServo
-				, int targetAngle
-				, int msDelayPerDegreeMoved 
-				, int msDelayAfterCommandSent
-				, int stepType) {
-	
-  int pulselength = 0;
-  byte slowSpeed = 10;
-  int slowMoveDegrees = targetAngle * 0.1;
-  int msDelayAfterSlowCommandSent = slowMoveDegrees * (msDelayPerDegreeMoved / slowSpeed);
-	  
-
-  switch(stepType) {
-    //check to make sure the end effector is clear of inserts
-    case eeButtonCheck_Empty:	
-	  //split the button press into 2 parts
-	  //fast move and slow move 
-	  //to avoid knocking the wires off the button
-		
-	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*.9, msDelayPerDegreeMoved);
-      delay(msDelayAfterCommandSent);
-	  
-	  //slow move for 10%
-      SetServoPosition(currentServo, targetAngle, slowSpeed);
-	  delay(100);
-	  
-      if(CheckButton_Pressed() && ErrorCheckingEnabed) {
-        printWithParity_P(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
-        updateLCD(msg_ERROR_NOT_EMPTY, msg_S_TO_RETRY);
-        InErrorState = true;
-      } else {      
-        if(CheckButton_Pressed()) {
-          printWithParity_P(msg_BUTTON_PRESSED);
-        } else {
-          printWithParity_P(msg_BUTTON_NOT_PRESSED);
-        }  
-        InErrorState = false;
-      }
-      break;
-      
-    //check to make sure the end effector is holding an insert
-    case eeButtonCheck_HoldingTool:	
-	  //split the button press into 2 parts
-	  //fast move and slow move 
-	  //to avoid knocking the wires off the button
-		
-	  //fast move for 90%
-      SetServoPosition(currentServo, targetAngle*.9, msDelayPerDegreeMoved);
-      delay(msDelayAfterCommandSent);
-	  
-	  //slow move for 10%
-      SetServoPosition(currentServo, targetAngle, slowSpeed);
-	  delay(100);
-
-      if(!CheckButton_Pressed() && ErrorCheckingEnabed) {
-        printWithParity_P(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
-        updateLCD(msg_ERROR_EMPTY, msg_S_TO_RETRY);
-        InErrorState = true;
-      } else {      
-        if(CheckButton_Pressed()) {
-          printWithParity_P(msg_BUTTON_PRESSED);
-        } else {
-          printWithParity_P(msg_BUTTON_NOT_PRESSED);
-        }  
-        InErrorState = false;
-      }
-      break;
-
-    case eeToolHolderPrepRotate:
-      servos_currentAngle[s_ToolHolder_Rotate] = servos_currentAngle[s_ToolHolder_Rotate] + eeToolHolderPrepRotate_degrees;
-      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate], servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
-
-      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
-
-      delay(msDelayAfterCommandSent);
-      break;
-      
-    case eeToolHolderPrepUNrotate:
-      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved); //rotate tool actuator
-      delay(70);
-      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate] - eeToolHolderPrepUNrotate_degrees, servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
-      delay(msDelayAfterCommandSent);
-      pulselength = map(servos_currentAngle[s_ToolHolder_Rotate], servoMinAngle, servos_maxAngle[s_ToolHolder_Rotate], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[s_ToolHolder_Rotate], 0, pulselength); 
-      break;
-      
-    case eeRegularStep:
-      SetServoPosition(currentServo, targetAngle, msDelayPerDegreeMoved);
-      delay(msDelayAfterCommandSent);
-      break;
-      
-    case eeAddHalfDegreePrecision:
-      int precisionPulseLength = 0;
-      precisionPulseLength = fMap((float)targetAngle + (float)0.5, 0, servos_maxAngle[currentServo], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[currentServo], 0, precisionPulseLength);
-      delay(msDelayAfterCommandSent);
-      break;
-  }
-}
-
-
-void SetServoPosition(int ServoNum, int TargetAngle, int msDelay)
-{
-	int pulselength = 0;
-	int currentAngle = servos_currentAngle[ServoNum];
-	int angleDifference = TargetAngle - currentAngle;
-
-	int msCountedBeforeLock = 0;
-
-  //if the msDelay is zero then don't use a loop
-  if(msDelay == 0)
-  {
-      servos_currentAngle[ServoNum] = TargetAngle;  
-      pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[ServoNum], 0, pulselength); 
-  }
-  //else use a loop to inject the delay and fake accel
-  else
-  {
-  	if (angleDifference > 0)
-  	{  	
-  		for(int i = currentAngle; i <= TargetAngle; i++)
-  		{
-  			servos_currentAngle[ServoNum] = i;  
-  			pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
-  			pwm.setPWM(servos_pin[ServoNum], 0, pulselength);	
-  			delay(msDelay);
-			
-			
-			//deploy the tool lock part way thru the extrude
-			if (LockToolPartWayThru)
-			{
-				msCountedBeforeLock += msDelay;
-
-				//lock the tool
-				if(msCountedBeforeLock >= numMsUntilLock)
-				{
-					LockToolPartWayThru = false;
-					servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Locked;
-					pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
-					pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);	
-				}
-			}
-  		}	
-  	}
-  	else
-  	{
-  		for(int i = currentAngle; i >= TargetAngle; i--)
-  		{
-  			servos_currentAngle[ServoNum] = i;  
-  			pulselength = map(servos_currentAngle[ServoNum], 0, servos_maxAngle[ServoNum], servo_pwm_min, servo_pwm_max);
-  			pwm.setPWM(servos_pin[ServoNum], 0, pulselength);	
-  			delay(msDelay);
-  		}	
-  	}
-  }
-}
 
 //pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar //in position under extruder centered with bore
 //Bore alignment turned on. Tool Rotate Servo moved to position Under Extruder Connect With Nozzle Collar.
