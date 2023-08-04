@@ -463,7 +463,7 @@ void SetSwapStepLocations(){
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //95; //97; //98; //96; //91; //86 = 5
 	int pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder = 109 + Adjustment_Tool_Rotate; //108 //106 //104;
 	int pos_Tool_Rotate_BetweenBothNozzles = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder - 7 + Adjustment_Tool_Rotate;
-	int pos_Tool_Rotate_ButtonToolCheck = 79 + Adjustment_Tool_Rotate; //75, 74, 72, 75, 70 //72; //74; //75; //68;
+	int pos_Tool_Rotate_ButtonToolCheck = 75 + Adjustment_Tool_Rotate; //75, 74, 72, 75, 70 //72; //74; //75; //68;
 	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate; //280 //275, 282; //283; //284; //265; //270; //274;
 	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 286 + Adjustment_Tool_Rotate; //285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
 	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate; //292 //293 291; // 310; //305; //297;
@@ -515,8 +515,8 @@ void SetSwapStepLocations(){
 	//**** Waste Cup Action (WA) (micro 280d servo) ****
 	//Servo 7
 	//next line is starting first 1st position
-	int pos_WasteCup_Action_Fill = 170 + Adjustment_WasteCup_Action; //110, 0
-	int pos_WasteCup_Action_Dump = 125 + Adjustment_WasteCup_Action; //99, 107
+	int pos_WasteCup_Action_Fill = 171 + Adjustment_WasteCup_Action; //110, 0
+	int pos_WasteCup_Action_Dump = 164 + Adjustment_WasteCup_Action; //99, 107
 
 
 	//void SetServoStartingPositions(){
