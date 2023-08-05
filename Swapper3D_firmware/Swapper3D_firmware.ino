@@ -981,11 +981,9 @@ void ProcessStep(int currentServo
 				, int msDelayAfterCommandSent
 				, int stepType) {
 	
-	byte slowDownDegrees = 8;
+	byte slowDownDegrees = 20;
   int pulselength = 0;
-  byte slowSpeed = 10;
-  int slowMoveDegrees = targetAngle * 0.1;
-  int msDelayAfterSlowCommandSent = slowMoveDegrees * (msDelayPerDegreeMoved / slowSpeed);
+  byte slowSpeed = 80;
 	  
 
   switch(stepType) {
@@ -997,11 +995,9 @@ void ProcessStep(int currentServo
 		
 	  //fast move for 90%
       SetServoPosition(currentServo, targetAngle + slowDownDegrees, msDelayPerDegreeMoved);
-      delay(msDelayAfterCommandSent);
-	  
 	  //slow move for 10%
       SetServoPosition(currentServo, targetAngle, slowSpeed);
-	  delay(100);
+      delay(msDelayAfterCommandSent);
 	  
       if(CheckButton_Pressed() && ErrorCheckingEnabed) {
         printWithParity_P(msg_ERROR_HAS_TOOL_BUT_SHOULD_BE_EMPTY);
@@ -1025,11 +1021,9 @@ void ProcessStep(int currentServo
 		
 	  //fast move for 90%
       SetServoPosition(currentServo, targetAngle + slowDownDegrees, msDelayPerDegreeMoved);
-      delay(msDelayAfterCommandSent);
-	  
 	  //slow move for 10%
       SetServoPosition(currentServo, targetAngle, slowSpeed);
-	  delay(100);
+      delay(msDelayAfterCommandSent);
 
       if(!CheckButton_Pressed() && ErrorCheckingEnabed) {
         printWithParity_P(msg_ERROR_IS_EMPTY_BUT_SHOULD_HAVE_TOOL);
