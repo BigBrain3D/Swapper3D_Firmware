@@ -141,7 +141,7 @@ byte ProcessSteps_LoadTool_stepType[numOfProcessSteps_LoadTool]={0};
 
 
 //30 total steps to Unload
-const byte numOfProcessSteps_unload_connect = 5; //***change this if adding or removing process steps
+const byte numOfProcessSteps_unload_connect = 6; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_pulldown = 3; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_deployCutter = 1; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide = 1; //Palette ONLY //***change this if adding or removing process steps
@@ -467,17 +467,20 @@ void SetSwapStepLocations(){
 	//**** Tool Rotate (TR) ****
 	//next line is starting first 1st position
 	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 104 + Adjustment_Tool_Rotate; //103 //102; //104; //103;
-	int pos_Tool_Rotate_LeftOfToolInHolder = 98 + Adjustment_Tool_Rotate; //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
-	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 96 + Adjustment_Tool_Rotate; //95 //80, 85; //90; //83;//76 = 11
-	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 98 + Adjustment_Tool_Rotate; //97 //98, 97; //95;
+	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate; //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
+	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 93 + Adjustment_Tool_Rotate; //97 //96 //95 //80, 85; //90; //83;//76 = 11
+	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 97 + Adjustment_Tool_Rotate; //99 //97 //98, 97; //95;
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //95; //97; //98; //96; //91; //86 = 5
 	int pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder = 109 + Adjustment_Tool_Rotate; //108 //106 //104;
 	int pos_Tool_Rotate_BetweenBothNozzles = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder - 7 + Adjustment_Tool_Rotate;
-	int pos_Tool_Rotate_ButtonToolCheck = 75 + Adjustment_Tool_Rotate; //75, 74, 72, 75, 70 //72; //74; //75; //68;
+	int pos_Tool_Rotate_ButtonToolCheck = 72 + Adjustment_Tool_Rotate; //74, 75, 74, 72, 75, 70 //72; //74; //75; //68;
 	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate; //280 //275, 282; //283; //284; //265; //270; //274;
-	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 286 + Adjustment_Tool_Rotate; //285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
+	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 283 + Adjustment_Tool_Rotate; //285, 286, 285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
 	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate; //292 //293 291; // 310; //305; //297;
 	int pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar = 291 + Adjustment_Tool_Rotate; //290 //291, 293 291; //285;
+	int pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle = 289 + Adjustment_Tool_Rotate; //new
+	int pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle = 285 + Adjustment_Tool_Rotate; //new
+	
 	int pos_Tool_Rotate_WaitingForunloadCommand = 148 + Adjustment_Tool_Rotate; //147 //140;
 	int pos_Tool_Rotate_PastWasteCup = 259 + Adjustment_Tool_Rotate; //258 //251;
 
@@ -486,17 +489,19 @@ void SetSwapStepLocations(){
 	//next line is starting first 1st position
 	//increasing this will lower all up/down moves. decreasing this will raise all up/down moves
 	int pos_Tool_Height_LowestLevel = 129 + Adjustment_Tool_Height; //125 //121 //Servo change 126; // below 126 it causes the servo to stall.  127; //126; //119; //117
-	int pos_Tool_Height_ButtingTheToolToTheLeftOfNext = 44 + Adjustment_Tool_Height; //40 //37, Servo change 42;//we want to be at the height of the hex on the right nozzle //39; //40; //41;
-	int pos_Tool_Height_NozzleCollarLevel = 37 + Adjustment_Tool_Height; //33 //30, Servo change 35; //38; //36; //29;
+	int pos_Tool_Height_ButtingTheToolToTheLeftOfNext = 11 + 40 + Adjustment_Tool_Height; //44 //40 //37, Servo change 42;//we want to be at the height of the hex on the right nozzle //39; //40; //41;
+	int pos_Tool_Height_NozzleCollarLevel = 11 + 33 + Adjustment_Tool_Height; //37 //33 //30, Servo change 35; //38; //36; //29;
 	int pos_Tool_Height_ToolLoweredButStillInHolder = 59 + Adjustment_Tool_Height; //54 //Servo change 49; //42;
-	int pos_Tool_Height_ToolFullyInsertedInHolder = 31 + Adjustment_Tool_Height; //27 //25, 22, Servo change 27; //29; //20; //13;
-	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 38 + Adjustment_Tool_Height; //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
-	int pos_Tool_Height_ToolLoweredButStillInExtruder = 52 + Adjustment_Tool_Height; //48 //Servo change 53; //53 moves up until the hotend tapper is past the edge of the inner bore of the heater block//56; //49;
-	int pos_Tool_Height_ToolFullyInsertedIntoExtruder = 41 + Adjustment_Tool_Height; //37 //39, 40, 39, 33, Servo change 38; //40; //42; //35; //28;
-	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure = 44 + Adjustment_Tool_Height; //40 //Servo change 43; //42; //41; //42; //40; //42; //clunking? maybe 41?
-	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 42 + Adjustment_Tool_Height; //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
-	int pos_Tool_Height_ToolLowered_CuttingHeight = 122 + Adjustment_Tool_Height; //118 //117 //125 //113;//111, 108, 109; 107; //higher number moves down away from cutter leaving longer filament strand sticking out. //108; //Servo change 112;//works with new cutting sequence //110; //108; at 108 there was a single instance of cutting the heatbreak copper and it was ruined. //107; //99;
-	int pos_Tool_Height_ToolLowered_BelowCutterJaws = 116 + Adjustment_Tool_Height; //112 //Servo change 117; //110;
+	int pos_Tool_Height_ToolFullyInsertedInHolder = 11 + 32 + Adjustment_Tool_Height; //31 //27 //25, 22, Servo change 27; //29; //20; //13;
+	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 11 + 36 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
+	int pos_Tool_Height_ToolLoweredButStillInExtruder = 72 + Adjustment_Tool_Height;//Aug8:52 //48 //Servo change 53; //53 moves up until the hotend tapper is past the edge of the inner bore of the heater block//56; //49;
+	int pos_Tool_Height_ToolFullyInsertedIntoExtruder = 42 + Adjustment_Tool_Height; //41 //37 //39, 40, 39, 33, Servo change 38; //40; //42; //35; //28;
+	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure = 45 + Adjustment_Tool_Height;//44 //40 //Servo change 43; //42; //41; //42; //40; //42; //clunking? maybe 41?
+	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 11 + 40 + Adjustment_Tool_Height; //43 //42 //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
+	int pos_Tool_Height_ToolLowered_CuttingHeight = 122 + Adjustment_Tool_Height; //122 //118 //117 //125 //113;//111, 108, 109; 107; //higher number moves down away from cutter leaving longer filament strand sticking out. //108; //Servo change 112;//works with new cutting sequence //110; //108; at 108 there was a single instance of cutting the heatbreak copper and it was ruined. //107; //99;
+	int pos_Tool_Height_ToolLowered_BelowCutterJaws = 116 + Adjustment_Tool_Height; //116 //112 //Servo change 117; //110;
+	int pos_Tool_Height_SideOfNozzleInExtruder = 54 + Adjustment_Tool_Height; //new
+	int pos_Tool_Height_CollarOfNozzleInExtruder = 50 + Adjustment_Tool_Height; //new
 
 	//**** Tool Lock (TL) (micro 280d servo) ****
 	//Servo 2
@@ -627,7 +632,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[3] = 35; //150; //80;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[4] = 10;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[5] = 15;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[6] = 3; //130;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[6] = 100; //3; //130;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[7] = 12;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[8] = 30; //200; //90;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[9] = 50; //260;//rotate to under extruder
@@ -666,45 +671,44 @@ void SetSwapStepLocations(){
 	ProcessSteps_LoadTool_stepType[20] = eeRegularStep;
 
 
-	//void SetProcessSteps_unload_connect(){
-	ProcessSteps_unload_connect_servoNumber[0] = s_Tool_Rotate;
-	ProcessSteps_unload_connect_servoNumber[1] = s_Tool_Height;
-	ProcessSteps_unload_connect_servoNumber[2] = s_Tool_Rotate;
-	ProcessSteps_unload_connect_servoNumber[3] = s_Tool_Rotate;
-	ProcessSteps_unload_connect_servoNumber[4] = s_QuickSwapHotend_Lock;
+//							****UNLOAD****
+	ProcessSteps_unload_connect_servoNumber[0] = s_Tool_Rotate;// TR 286 + 3 pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle
+	ProcessSteps_unload_connect_servoNumber[1] = s_Tool_Height;// TH 43 + 11 pos_Tool_Height_SideOfNozzleInExtruder
+	ProcessSteps_unload_connect_servoNumber[2] = s_Tool_Rotate;// TR 282 + 3 pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle
+	ProcessSteps_unload_connect_servoNumber[3] = s_Tool_Height;// TH 39 + 11 pos_Tool_Height_CollarOfNozzleInExtruder
+	ProcessSteps_unload_connect_servoNumber[4] = s_Tool_Rotate;
+	ProcessSteps_unload_connect_servoNumber[5] = s_QuickSwapHotend_Lock;
 
-	ProcessSteps_unload_connect_degrees[0] = pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar;
-	ProcessSteps_unload_connect_degrees[1] = pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure; //pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure;
-	ProcessSteps_unload_connect_degrees[2] = pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar;
-	ProcessSteps_unload_connect_degrees[3] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
-	ProcessSteps_unload_connect_degrees[4] = pos_QuickSwapHotend_Lock_Unlocked;
+	ProcessSteps_unload_connect_degrees[0] = pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle; //pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar; //update to position past nozzle but under collar
+	ProcessSteps_unload_connect_degrees[1] = pos_Tool_Height_SideOfNozzleInExtruder; //pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar; //update to position past nozzle but under collar
+	ProcessSteps_unload_connect_degrees[2] = pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle; //pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar; //update to position past nozzle but under collar
+	ProcessSteps_unload_connect_degrees[3] = pos_Tool_Height_CollarOfNozzleInExtruder; //pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar; //update to position past nozzle but under collar
+	ProcessSteps_unload_connect_degrees[4] = pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar;
+	ProcessSteps_unload_connect_degrees[5] = pos_QuickSwapHotend_Lock_Unlocked;
 
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[0] = 0;
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[1] = 0;
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[2] = 0;
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[3] = 0;
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[4] = 0;
+	ProcessSteps_unload_connect_msDelayPerDegreeMoved[5] = 0;
 	
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[0] = 55; //350;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 63; //430; //330; //230; //up to nozzle collar level
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 40; //200; //150; //90;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 9;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 11;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[0] = 350;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 10; //55; //350;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 10; //63; //430; //330; //230; //up to nozzle collar level
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 10;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 10; //50;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[5] = 10; //11;
 	
 	ProcessSteps_unload_connect_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[1] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[2] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[3] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[4] = eeRegularStep;  
+	ProcessSteps_unload_connect_stepType[5] = eeRegularStep;  
 
 
 
-//_servoNumber
-//_degrees
-//_msDelayPerDegreeMoved
-//_msDelayAfterCommandSent
-//_stepType
-	//void SetProcessSteps_unload_pulldown(){
 	ProcessSteps_unload_pulldown_servoNumber[0] = s_Tool_Height; //down to cutting height
 	ProcessSteps_unload_pulldown_servoNumber[1] = s_Tool_Lock; 
 	ProcessSteps_unload_pulldown_servoNumber[2] = s_QuickSwapHotend_Lock;
@@ -1174,6 +1178,9 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
 void load_insert(int toolToLoad) {    
     toolIsLoaded = true;
   
+Serial.print("toolToLoad");
+Serial.println(toolToLoad);
+
     ToolHolder_AlignToThisTool(toolToLoad);
 
 	ExecuteSteps(ProcessSteps_LoadTool_servoNumber
@@ -1336,19 +1343,32 @@ void boreAlignOn() {
     servos_currentAngle[s_QuickSwapHotend_Lock] = pos_QuickSwapHotend_Lock_Unlocked;
     pulselength = map(servos_currentAngle[s_QuickSwapHotend_Lock], 0, servos_maxAngle[s_QuickSwapHotend_Lock], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_QuickSwapHotend_Lock], 0, pulselength);	
+	
+	//wait for the end effector to be still
+    //then unlock the tool
+    delay(2000);
+    servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Unlocked;
+    pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
 }
 
 //pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext //tool arm stored
 void boreAlignOff() {
-    // Set the Tool_Rotate servo to the desired position
+	//lock the insert into the end effector
 	int pulselength = 0;
+    servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Locked;
+    pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
+    pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
+	delay(200); //wait for lock to be in place
+	
+    // Set the Tool_Rotate servo to the desired position
     servos_currentAngle[s_Tool_Rotate] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
     pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);
-
     //wait for the end effector to be still
+    delay(2000);
+
     //then unlock the tool
-    delay(3000);
     servos_currentAngle[s_Tool_Lock] = pos_Tool_Lock_Unlocked;
     pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
     pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
