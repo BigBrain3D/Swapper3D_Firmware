@@ -1177,9 +1177,6 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
 
 void load_insert(int toolToLoad) {    
     toolIsLoaded = true;
-  
-Serial.print("toolToLoad");
-Serial.println(toolToLoad);
 
     ToolHolder_AlignToThisTool(toolToLoad);
 
