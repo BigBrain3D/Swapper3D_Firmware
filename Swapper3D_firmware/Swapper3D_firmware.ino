@@ -383,7 +383,8 @@ void updateLCD_line2_with_step(byte servo, int angle, int step) {
   lcd.print(formatted_message);
 
   // Print the same message to the serial port
-  Serial.println(formatted_message);
+  // Serial.println(formatted_message);
+  printWithParity(formatted_message);
 }
 
 
