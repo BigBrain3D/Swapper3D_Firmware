@@ -383,7 +383,6 @@ void updateLCD_line2_with_step(byte servo, int angle, int step) {
   lcd.print(formatted_message);
 
   // Print the same message to the serial port
-  // Serial.println(formatted_message);
   printWithParity(formatted_message);
 }
 
@@ -695,11 +694,11 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[5] = 0;
 	
 	ProcessSteps_unload_connect_msDelayAfterCommandSent[0] = 350;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 10; //55; //350;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 10; //63; //430; //330; //230; //up to nozzle collar level
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 10;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 10; //50;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[5] = 10; //11;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 350; //10; //55; //350;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 63; //10; //63; //430; //330; //230; //up to nozzle collar level
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 50; //10;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 50; //10; //50;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[5] = 50; //11; //10; //11;
 	
 	ProcessSteps_unload_connect_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[1] = eeRegularStep;
