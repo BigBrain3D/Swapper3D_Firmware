@@ -518,9 +518,9 @@ void SetSwapStepLocations(){
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
 	//next line is starting first 1st position
-	pos_Cutter_Rotate_Stowed = 27 + Adjustment_Cutter_Rotate; //25;//1;//must be greater than 0. 0 causes major jittering. Something about 25 works better than 26. 26 had lots of jitter.
-	int pos_Cutter_Rotate_Cutting = 123 + Adjustment_Cutter_Rotate; //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
-	int pos_Cutter_Rotate_ConnectWithFilamentGuide = 127 + Adjustment_Cutter_Rotate; //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
+	pos_Cutter_Rotate_Stowed = 24 + Adjustment_Cutter_Rotate; //27 //25;//1;//must be greater than 0. 0 causes major jittering. Something about 25 works better than 26. 26 had lots of jitter.
+	int pos_Cutter_Rotate_Cutting = 120 + Adjustment_Cutter_Rotate; //123 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
+	int pos_Cutter_Rotate_ConnectWithFilamentGuide = 123 + Adjustment_Cutter_Rotate; //127 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 
 	//**** Cutter Action (CA) ****
 	//Servo 6
@@ -738,7 +738,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_deployCutter_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
 	
 	
-	//void SetProcessSteps_unload_deployCutter(){
+	//void SetProcessSteps_unload_deployCutter_ConnectWithFilamentGuide
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_servoNumber[0] = s_Cutter_Rotate;
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_degrees[0] = pos_Cutter_Rotate_ConnectWithFilamentGuide;
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
