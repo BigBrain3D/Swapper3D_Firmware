@@ -1,4 +1,4 @@
-//Swapper3D FULL octoprint compatible firmware, Author: BigBrain3D, License: AGPLv3
+//Swapper3D FULL octoprint compatible firmware, Author: BigBrain3D, License: AGPLv3 
 #include <Adafruit_PWMServoDriver.h> 
 #include <LiquidCrystal.h>
 #include <stdarg.h>
@@ -526,7 +526,7 @@ void SetSwapStepLocations(){
 	//Servo 6
 	//next line is starting first 1st position
 	int pos_Cutter_Action_Open = 175 + Adjustment_Cutter_Action; //160
-	int pos_Cutter_Action_Cut = 15 + Adjustment_Cutter_Action; //0 //20; //40; //6; //7; //21;
+	int pos_Cutter_Action_Cut = 33 + Adjustment_Cutter_Action; //15 //0 //20; //40; //6; //7; //21;
 
 	//**** Waste Cup Action (WA) (micro 280d servo) ****
 	//Servo 7
@@ -717,7 +717,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_pulldown_degrees[1] = pos_Tool_Lock_Locked;
 	ProcessSteps_unload_pulldown_degrees[2] = pos_QuickSwapHotend_Lock_Locked;
 	
-	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[0] = 1; //lower to cutting height
+	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[0] = 0; //1; //lower to cutting height //This must be zero(0) so that the Zero delay can allow the lock to lock during the downward move. If it was set to a number >0 then the slow move would not allow the locl to activate until the move was complete regardless of the msDelayAfterCommandSent being zero. To sync the extrude and pulldown we must adjust the extrusion speed only.
 	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[1] = 0;
 	ProcessSteps_unload_pulldown_msDelayPerDegreeMoved[2] = 0;
 	
