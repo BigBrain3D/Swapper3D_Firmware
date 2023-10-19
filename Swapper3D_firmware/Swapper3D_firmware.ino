@@ -4,6 +4,9 @@
 #include <stdarg.h>
 #include <EEPROM.h>
 
+const char firmwareVersion[] PROGMEM = "1.1.0";
+const char msg_RetrieveCurrentFirmwareVersion[] PROGMEM = "RetrieveCurrentFirmwareVersion";
+
 const double msPerStepAdjustment PROGMEM = 0.50; //this is divided by 100 and used to adjust the msPerStep for each step. make negative for faster than 7v servos, positive for slower 7v servos. 6V servos should be about 30% extra delay for each step.
 
 const char msg_OCTOPRINT[] PROGMEM = "octoprint";
@@ -16,7 +19,7 @@ const char msg_unload_PULLDOWN_CuttingHeight[] PROGMEM = "unload_pulldown_cuttin
 const char msg_unload_DEPLOYCUTTER[] PROGMEM = "unload_deploycutter";
 const char msg_unload_DEPLOYCUTTER_CONNECT_WITH_FILAMENT_GUIDE[] PROGMEM = "unload_deploycutter_guide";
 const char msg_unload_CUT[] PROGMEM = "unload_cut";
-// const char msg_unload_AVOIDBIN[] PROGMEM = "unload_AvoidBin";
+const char msg_unload_AVOIDBIN[] PROGMEM = "unload_AvoidBin";
 const char msg_unload_stowCutter[] PROGMEM = "unload_stowCutter";
 const char msg_unload_stowInsert[] PROGMEM = "unload_stowInsert";
 const char msg_unload_dumpWaste[] PROGMEM = "unload_dumpWaste";
@@ -31,7 +34,7 @@ const char msg_CONNECT[] PROGMEM = "Connect";
 const char msg_PULLDOWN[] PROGMEM = "Pulldown";
 const char msg_DEPLOY_CUTTER[] PROGMEM = "Deploy cutter";
 const char msg_CUT[] PROGMEM = "Cut";
-// const char msg_AVOID_WASTE_BIN[] PROGMEM = "Avoid waste bin";
+const char msg_AVOID_WASTE_BIN[] PROGMEM = "Avoid waste bin";
 const char msg_STOW_CUTTER[] PROGMEM = "Stow cutter";
 const char msg_STOW_INSERT[] PROGMEM = "Stow Insert";
 const char msg_DUMP_WASTE[] PROGMEM = "Dump waste";
@@ -62,7 +65,29 @@ const char msg_ReadFromEeprom_MinorVersion[] PROGMEM = "readminor";
 const char msg_ReadFromEeprom_PatchVersion[] PROGMEM = "readpatch";
 const char msg_BoreAlignOn[] PROGMEM = "borealignon";
 const char msg_BoreAlignOff[] PROGMEM = "borealignoff";
+
+const char servoInitial_0[] PROGMEM = "TR";
+const char servoInitial_1[] PROGMEM = "TH";
+const char servoInitial_2[] PROGMEM = "TL";
+const char servoInitial_3[] PROGMEM = "QL";
+const char servoInitial_4[] PROGMEM = "HR";
+const char servoInitial_5[] PROGMEM = "CR";
+const char servoInitial_6[] PROGMEM = "CA";
+const char servoInitial_7[] PROGMEM = "WA";
+
+const char* const servoInitials_table[] PROGMEM = {
+  servoInitial_0,
+  servoInitial_1,
+  servoInitial_2,
+  servoInitial_3,
+  servoInitial_4,
+  servoInitial_5,
+  servoInitial_6,
+  servoInitial_7
+};
 // ... add more phrases as needed ...
+
+
 
 
 const int inputStringSize = 35;
@@ -148,7 +173,7 @@ const byte numOfProcessSteps_unload_pulldown_CuttingHeight = 2; //***change this
 const byte numOfProcessSteps_unload_deployCutter = 1; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide = 1; //Palette ONLY //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_cut = 2; //***change this if adding or removing process steps
-// const byte numOfProcessSteps_unload_avoidBin = 2; //***change this if adding or removing process steps
+const byte numOfProcessSteps_unload_avoidBin = 2; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_stowCutter = 1; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_stowInsert = 12; //***change this if adding or removing process steps
 const byte numOfProcessSteps_unload_dumpWaste = 2; //***change this if adding or removing process steps
@@ -160,7 +185,7 @@ byte ProcessSteps_unload_pulldown_CuttingHeight_servoNumber[numOfProcessSteps_un
 byte ProcessSteps_unload_deployCutter_servoNumber[numOfProcessSteps_unload_deployCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_servoNumber[numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide]={0}; //Palette ONLY //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_cut_servoNumber[numOfProcessSteps_unload_cut]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
-// byte ProcessSteps_unload_avoidBin_servoNumber[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
+byte ProcessSteps_unload_avoidBin_servoNumber[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowCutter_servoNumber[numOfProcessSteps_unload_stowCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowInsert_servoNumber[numOfProcessSteps_unload_stowInsert]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_dumpWaste_servoNumber[numOfProcessSteps_unload_dumpWaste]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
@@ -172,7 +197,7 @@ int ProcessSteps_unload_pulldown_CuttingHeight_degrees[numOfProcessSteps_unload_
 int ProcessSteps_unload_deployCutter_degrees[numOfProcessSteps_unload_deployCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 int ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_degrees[numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 int ProcessSteps_unload_cut_degrees[numOfProcessSteps_unload_cut]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
-// int ProcessSteps_unload_avoidBin_degrees[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
+int ProcessSteps_unload_avoidBin_degrees[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 int ProcessSteps_unload_stowCutter_degrees[numOfProcessSteps_unload_stowCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 int ProcessSteps_unload_stowInsert_degrees[numOfProcessSteps_unload_stowInsert]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 int ProcessSteps_unload_dumpWaste_degrees[numOfProcessSteps_unload_dumpWaste]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
@@ -184,7 +209,7 @@ byte ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved[numOfProce
 byte ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[numOfProcessSteps_unload_deployCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayPerDegreeMoved[numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_cut_msDelayPerDegreeMoved[numOfProcessSteps_unload_cut]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
-// byte ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
+byte ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowCutter_msDelayPerDegreeMoved[numOfProcessSteps_unload_stowCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[numOfProcessSteps_unload_stowInsert]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[numOfProcessSteps_unload_dumpWaste]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
@@ -196,7 +221,7 @@ byte ProcessSteps_unload_pulldown_CuttingHeight_msDelayAfterCommandSent[numOfPro
 byte ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[numOfProcessSteps_unload_deployCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayAfterCommandSent[numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_cut_msDelayAfterCommandSent[numOfProcessSteps_unload_cut]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
-// byte ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
+byte ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowCutter_msDelayAfterCommandSent[numOfProcessSteps_unload_stowCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[numOfProcessSteps_unload_stowInsert]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[numOfProcessSteps_unload_dumpWaste]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
@@ -208,13 +233,13 @@ byte ProcessSteps_unload_pulldown_CuttingHeight_stepType[numOfProcessSteps_unloa
 byte ProcessSteps_unload_deployCutter_stepType[numOfProcessSteps_unload_deployCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_stepType[numOfProcessSteps_unload_deployCutter_ConnectWithFilamentGuide]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_cut_stepType[numOfProcessSteps_unload_cut]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
-// byte ProcessSteps_unload_avoidBin_stepType[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
+byte ProcessSteps_unload_avoidBin_stepType[numOfProcessSteps_unload_avoidBin]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowCutter_stepType[numOfProcessSteps_unload_stowCutter]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_stowInsert_stepType[numOfProcessSteps_unload_stowInsert]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 byte ProcessSteps_unload_dumpWaste_stepType[numOfProcessSteps_unload_dumpWaste]={0}; //servo number, msDelayPerDegree, msDelayAfterCommandSent, stepType
 
 
-const byte msDelayAfterCommandSent_Buffer = 100; //50 //in milliseconds //extra ms delay 
+const byte msDelayAfterCommandSent_Buffer = 0; //100; was 100 before increasing all msDelayAfterCommandSent for each step by 100ms to enable fine grain control over delays at the step level //50 //in milliseconds //extra ms delay 
 
 
 //menu
@@ -250,25 +275,11 @@ const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 int pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 0;
 int pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 0;
 
-const char* getServoInitials(byte WhichServo) {
-  switch (WhichServo) {
-    case 0:
-      return "TR"; //"Tool_Rotate";
-    case 1:
-      return "TH"; //"Tool_Height";
-    case 2:
-      return "TL"; //"Tool_Lock";
-    case 3:
-      return "QL"; //"QuickSwap_Lock";
-    case 4:
-      return "HR"; //"Holder_Rotate";
-    case 5:
-      return "CR"; //"Cutter_Rotate";
-    case 6:
-      return "CA"; //"Cutter_Action";
-    case 7:
-      return "WA"; //"WasteCup_Action";
-  }
+
+const char* getServoInitials(byte whichServo) {
+  static char buffer[3];
+  strcpy_P(buffer, (char*)pgm_read_word(&(servoInitials_table[whichServo])));
+  return buffer;
 }
 
 
@@ -294,12 +305,12 @@ void printWithParity_P(const char* PROGMEM message) {
   Serial.println(output);
 }
 
-  void printWithParity(char* message) {
-    int parity = checkParity(message);
-    char output[60];
-    snprintf(output, sizeof(output), "%s%d", message, parity);
-    
-    Serial.println(output);
+void printWithParity(char* message) {
+	int parity = checkParity(message);
+	char output[60];
+	snprintf(output, sizeof(output), "%s%d", message, parity);
+
+	Serial.println(output);
   }
 
 
@@ -501,12 +512,12 @@ void SetSwapStepLocations(){
 	int pos_Tool_Height_ToolLoweredButStillInHolder = 59 + Adjustment_Tool_Height; //54 //Servo change 49; //42;
 	int pos_Tool_Height_ToolFullyInsertedInHolder = 11 + 32 + Adjustment_Tool_Height; //31 //27 //25, 22, Servo change 27; //29; //20; //13;
 	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 11 + 36 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
-	int pos_Tool_Height_ToolLoweredButStillInExtruder = 72 + Adjustment_Tool_Height;//Aug8:52 //48 //Servo change 53; //53 moves up until the hotend tapper is past the edge of the inner bore of the heater block//56; //49;
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder = 42 + Adjustment_Tool_Height; //41 //37 //39, 40, 39, 33, Servo change 38; //40; //42; //35; //28;
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure = 45 + Adjustment_Tool_Height;//44 //40 //Servo change 43; //42; //41; //42; //40; //42; //clunking? maybe 41?
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 11 + 40 + Adjustment_Tool_Height; //43 //42 //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
+	int pos_Tool_Height_ToolLoweredButStillInExtruder = 72 + Adjustment_Tool_Height;//Aug8:52 //48 //Servo change 53; //53 moves up until the hotend tapper is past the edge of the inner bore of the heater block//56; //49;
 	int pos_Tool_Height_ToolLowered_CuttingHeight = 122 + Adjustment_Tool_Height; //122 //118 //117 //125 //113;//111, 108, 109; 107; //higher number moves down away from cutter leaving longer filament strand sticking out. //108; //Servo change 112;//works with new cutting sequence //110; //108; at 108 there was a single instance of cutting the heatbreak copper and it was ruined. //107; //99;
-	int pos_Tool_Height_ToolLowered_BelowCutterJaws = 116 + Adjustment_Tool_Height; //116 //112 //Servo change 117; //110;
+	// int pos_Tool_Height_ToolLowered_BelowCutterJaws = 116 + Adjustment_Tool_Height; //116 //112 //Servo change 117; //110;
 	int pos_Tool_Height_SideOfNozzleInExtruder = 54 + Adjustment_Tool_Height; //new
 	int pos_Tool_Height_CollarOfNozzleInExtruder = 50 + Adjustment_Tool_Height; //new
 
@@ -633,27 +644,27 @@ void SetSwapStepLocations(){
 	ProcessSteps_LoadTool_msDelayPerDegreeMoved[19] = 0;
 	ProcessSteps_LoadTool_msDelayPerDegreeMoved[20] = 0;
 
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[0] = 45; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[1] = 25; //150; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[2] = 25; //150; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[3] = 35; //150; //80;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[4] = 10;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[5] = 15;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[6] = 100; //3; //130;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[7] = 12;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[0] = 55; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[1] = 35; //150; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[2] = 35; //150; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[3] = 45; //150; //80;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[4] = 20;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[5] = 25;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[6] = 50; //3; //130;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[7] = 22;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[8] = 30; //200; //90;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[9] = 50; //260;//rotate to under extruder
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[10] = 30; //110;//give the hotend time to stabilize before moving up to heaterblock bore
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[11] = 30; //220;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[12] = 13;//cannot unlock without hitting the cooling shround. Must have delay. //30; //130;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[13] = 23; //130; //fully inserted into extruder
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[14] = 30; //200; //110; //Lock the hotend into extruder
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[15] = 9;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[16] = 20; //110; //jerk nozzle release from hotend collar
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[17] = 9;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[18] = 18;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[19] = 100; //700;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[20] = 16;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[9] = 60; //260;//rotate to under extruder
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[10] = 40; //110;//give the hotend time to stabilize before moving up to heaterblock bore
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[11] = 40; //220;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[12] = 23;//cannot unlock without hitting the cooling shround. Must have delay. //30; //130;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[13] = 33; //130; //fully inserted into extruder
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[14] = 40; //200; //110; //Lock the hotend into extruder
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[15] = 19;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[16] = 30; //110; //jerk nozzle release from hotend collar
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[17] = 19;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[18] = 28;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[19] = 110; //700;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[20] = 26;
 
 	ProcessSteps_LoadTool_stepType[0] = eeRegularStep;
 	ProcessSteps_LoadTool_stepType[1] = eeRegularStep;
@@ -700,12 +711,12 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[4] = 0;
 	ProcessSteps_unload_connect_msDelayPerDegreeMoved[5] = 0;
 	
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[0] = 350;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 350; //10; //55; //350;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 63; //10; //63; //430; //330; //230; //up to nozzle collar level
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 50; //10;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 50; //10; //50;
-	ProcessSteps_unload_connect_msDelayAfterCommandSent[5] = 50; //11; //10; //11;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[0] = 360;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[1] = 360; //10; //55; //350;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[2] = 20; //10; //63; //430; //330; //230; 
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[3] = 40; //10; //up to nozzle collar level
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[4] = 20; //10; //50;
+	ProcessSteps_unload_connect_msDelayAfterCommandSent[5] = 20; //11; //10; //11;
 	
 	ProcessSteps_unload_connect_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_connect_stepType[1] = eeRegularStep;
@@ -725,15 +736,15 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_pulldown_LockingHeight_msDelayPerDegreeMoved[0] = 0; //1; //lower to cutting height //This must be zero(0) so that the Zero delay can allow the lock to lock during the downward move. If it was set to a number >0 then the slow move would not allow the locl to activate until the move was complete regardless of the msDelayAfterCommandSent being zero. To sync the extrude and pulldown we must adjust the extrusion speed only.
 	ProcessSteps_unload_pulldown_LockingHeight_msDelayPerDegreeMoved[1] = 0;
 	
-	ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent[0] = 100;
-	ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent[1] = 0; //110; //lock tool. lock moved to SetServoPosition()
+	ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent[0] = 10; //100;
+	ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent[1] = 30; //110; //lock tool. lock moved to SetServoPosition()
 	
 	ProcessSteps_unload_pulldown_LockingHeight_stepType[0] = eeRegularStep; //was eeExtrude; but the extrude part is now handled by octoprint //lower to cutting height. extrude stage 2
 	ProcessSteps_unload_pulldown_LockingHeight_stepType[1] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
 
 	//pulldown to cutting height
 	ProcessSteps_unload_pulldown_CuttingHeight_servoNumber[0] = s_Tool_Height; //down to cutting height
-	ProcessSteps_unload_pulldown_CuttingHeight_servoNumber[1] = s_QuickSwapHotend_Lock;
+	ProcessSteps_unload_pulldown_CuttingHeight_servoNumber[1] = s_QuickSwapHotend_Lock; //release the QuickSwap-lock after insert is removed from the bore
 	
 	ProcessSteps_unload_pulldown_CuttingHeight_degrees[0] = pos_Tool_Height_ToolLowered_CuttingHeight;
 	ProcessSteps_unload_pulldown_CuttingHeight_degrees[1] = pos_QuickSwapHotend_Lock_Locked;
@@ -741,7 +752,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved[0] = 0; //1; //lower to cutting height //This must be zero(0) so that the Zero delay can allow the lock to lock during the downward move. If it was set to a number >0 then the slow move would not allow the locl to activate until the move was complete regardless of the msDelayAfterCommandSent being zero. To sync the extrude and pulldown we must adjust the extrusion speed only.
 	ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved[1] = 0;
 	
-	ProcessSteps_unload_pulldown_CuttingHeight_msDelayAfterCommandSent[0] = 0;
+	ProcessSteps_unload_pulldown_CuttingHeight_msDelayAfterCommandSent[0] = 10;
 	ProcessSteps_unload_pulldown_CuttingHeight_msDelayAfterCommandSent[1] = 0;
 	
 	ProcessSteps_unload_pulldown_CuttingHeight_stepType[0] = eeRegularStep; //was eeExtrude; but the extrude part is now handled by octoprint //lower to cutting height. extrude stage 2
@@ -752,15 +763,15 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_deployCutter_servoNumber[0] = s_Cutter_Rotate;
 	ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting;
 	ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
-	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[0] = 55; //650; //550; //500; //190; //cutter rotate
+	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[0] = 65; //650; //550; //500; //190; //cutter rotate
 	ProcessSteps_unload_deployCutter_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
 	
 	
 	//void SetProcessSteps_unload_deployCutter_ConnectWithFilamentGuide
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_servoNumber[0] = s_Cutter_Rotate;
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_degrees[0] = pos_Cutter_Rotate_ConnectWithFilamentGuide;
-	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
-	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayAfterCommandSent[0] = 55; //650; //550; //500; //190; //cutter rotate
+	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayPerDegreeMoved[0] = 16;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
+	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_msDelayAfterCommandSent[0] = 65; //650; //550; //500; //190; //cutter rotate
 	ProcessSteps_unload_deployCutter_ConnectWithFilamentGuide_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
 	
 
@@ -774,28 +785,28 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_cut_msDelayPerDegreeMoved[0] = 0;
 	ProcessSteps_unload_cut_msDelayPerDegreeMoved[1] = 0;//here
 	
-	ProcessSteps_unload_cut_msDelayAfterCommandSent[0] = 60; //550; //370; //130; //cut
-	ProcessSteps_unload_cut_msDelayAfterCommandSent[1] = 20; //250; //370;//130; //open //here
+	ProcessSteps_unload_cut_msDelayAfterCommandSent[0] = 70; //550; //370; //130; //cut
+	ProcessSteps_unload_cut_msDelayAfterCommandSent[1] = 70; //250; //370;//130; //open //here
 	
 	ProcessSteps_unload_cut_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_cut_stepType[1] = eeRegularStep; //open cutters //here
 
 
-	// //void SetProcessSteps_unload_avoidBin(){
-	// ProcessSteps_unload_avoidBin_servoNumber[0] = s_Tool_Height;
-	// ProcessSteps_unload_avoidBin_servoNumber[1] = s_Tool_Rotate;
+	//void SetProcessSteps_unload_avoidBin(){
+	ProcessSteps_unload_avoidBin_servoNumber[0] = s_Tool_Height;
+	ProcessSteps_unload_avoidBin_servoNumber[1] = s_Tool_Rotate;
 	
-	// ProcessSteps_unload_avoidBin_degrees[0] = pos_Tool_Height_ToolLowered_BelowCutterJaws;
-	// ProcessSteps_unload_avoidBin_degrees[1] = pos_Tool_Rotate_PastWasteCup;
+	ProcessSteps_unload_avoidBin_degrees[0] = pos_Tool_Height_LowestLevel;
+	ProcessSteps_unload_avoidBin_degrees[1] = pos_Tool_Rotate_PastWasteCup;
 	
-	// ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[0] = 0;
-	// ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[1] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[0] = 0;
+	ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved[1] = 0;
 	
-	// ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[0] = 50;
-	// ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[1] = 90;
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[0] = 0; //10
+	ProcessSteps_unload_avoidBin_msDelayAfterCommandSent[1] = 0; //10
 	
-    // ProcessSteps_unload_avoidBin_stepType[0] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
-	// ProcessSteps_unload_avoidBin_stepType[1] = eeRegularStep;
+    ProcessSteps_unload_avoidBin_stepType[0] = eeRegularStep; //eeRetract;Not anymore that these steps are only for the palette //after cutters are open. retract
+	ProcessSteps_unload_avoidBin_stepType[1] = eeRegularStep;
 	
 	
 
@@ -834,7 +845,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_stowInsert_degrees[5] = pos_Tool_Height_ToolFullyInsertedInHolder;
 	ProcessSteps_unload_stowInsert_degrees[6] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
 	ProcessSteps_unload_stowInsert_degrees[7] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
-	ProcessSteps_unload_stowInsert_degrees[8] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
+	ProcessSteps_unload_stowInsert_degrees[8] = pos_Tool_Rotate_LeftOfToolInHolder; //pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
 	ProcessSteps_unload_stowInsert_degrees[9] = pos_Tool_Height_LowestLevel;
 	ProcessSteps_unload_stowInsert_degrees[10] = pos_Tool_Rotate_ButtonToolCheck;
 	ProcessSteps_unload_stowInsert_degrees[11] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
@@ -852,18 +863,18 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[10] = 0;
 	ProcessSteps_unload_stowInsert_msDelayPerDegreeMoved[11] = 0;
 	
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[0] = 7;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[1] = 100; //700; //200; //button check should have tool
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[2] = 8;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[3] = 18;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[4] = 0; //130;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[5] = 8;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[6] = 7;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[7] = 30; //400; //50; //release from hotend which is now stowed
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[8] = 5;
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[9] = 35; //150; //lower to lowest level
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[10] = 40; //300; //180; button check should be empty
-	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[11] = 10;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[0] = 17;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[1] = 120; //700; //200; //button check should have tool
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[2] = 28;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[3] = 38;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[4] = 20; //130;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[5] = 28;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[6] = 27;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[7] = 50; //400; //50; //release from hotend which is now stowed
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[8] = 25;
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[9] = 55; //150; //lower to lowest level
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[10] = 60; //300; //180; button check should be empty
+	ProcessSteps_unload_stowInsert_msDelayAfterCommandSent[11] = 30;
 	
 	ProcessSteps_unload_stowInsert_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_stowInsert_stepType[1] = eeButtonCheck_HoldingTool;
@@ -890,8 +901,8 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[0] = 0;
 	ProcessSteps_unload_dumpWaste_msDelayPerDegreeMoved[1] = 0;
 
-	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[0] = 18;
-	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[1] = 10;
+	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[0] = 28;
+	ProcessSteps_unload_dumpWaste_msDelayAfterCommandSent[1] = 20;
 
 	ProcessSteps_unload_dumpWaste_stepType[0] = eeRegularStep;
 	ProcessSteps_unload_dumpWaste_stepType[1] = eeRegularStep;
@@ -1119,12 +1130,14 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
 				,byte ProcessSteps_msDelayPerDegreeMoved[]
 				,byte ProcessSteps_msDelayAfterCommandSent[]
 				,byte ProcessSteps_stepType[]
-				, int NumSteps) {    
+				,int NumSteps
+				,int inputDelay=0) { // add inputDelay parameter with a default value of 0
+    
+		
   int pulselength = 0;
   int buttonPress;
-  
   int currentStepOfProcess = 0;
-  
+  int delayPerDegree;
   
 	//Serial.print("# Steps:");
 	//Serial.println(NumSteps);
@@ -1148,11 +1161,15 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
 					                          , ProcessSteps_degrees[currentStepOfProcess]);
   //printWithParity(message);
 
-	  
+	if ( inputDelay == 0 )
+		delayPerDegree = ProcessSteps_msDelayPerDegreeMoved[currentStepOfProcess];
+	else
+		delayPerDegree = inputDelay;
+	
     ProcessStep(ProcessSteps_servoNumber[currentStepOfProcess]
 				,ProcessSteps_degrees[currentStepOfProcess] 
-				,ProcessSteps_msDelayPerDegreeMoved[currentStepOfProcess]
-				,ProcessSteps_msDelayAfterCommandSent[currentStepOfProcess]*10 + msDelayAfterCommandSent_Buffer
+				,delayPerDegree
+				,ProcessSteps_msDelayAfterCommandSent[currentStepOfProcess]*10 + msDelayAfterCommandSent_Buffer //it's *10 because then we can store the delays as bytes
 				,ProcessSteps_stepType[currentStepOfProcess]
 				);
   
@@ -1215,22 +1232,28 @@ void unload_connect(){
 				,numOfProcessSteps_unload_connect);
 }
 
-void unload_pulldown_LockingHeight(){
+// Updated the unload_pulldown_CuttingHeight function to optionally accept an 'inputDelay' parameter.
+// If a non-zero value is provided as 'inputDelay' when calling the function, 
+// this 'inputDelay' value will override the default 'ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved' value as the delay per degree.
+// If the 'inputDelay' is not provided or zero, the function will use 'ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved' as the delay per degree.
+void unload_pulldown_LockingHeight(int inputDelay = 0){
 	ExecuteSteps(ProcessSteps_unload_pulldown_LockingHeight_servoNumber
 				,ProcessSteps_unload_pulldown_LockingHeight_degrees
 				,ProcessSteps_unload_pulldown_LockingHeight_msDelayPerDegreeMoved
 				,ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent
 				,ProcessSteps_unload_pulldown_LockingHeight_stepType
-				,numOfProcessSteps_unload_pulldown_LockingHeight);
+				,numOfProcessSteps_unload_pulldown_LockingHeight
+				,inputDelay);
 }
 
-void unload_pulldown_CuttingHeight(){
+void unload_pulldown_CuttingHeight(int inputDelay = 0){
 	ExecuteSteps(ProcessSteps_unload_pulldown_CuttingHeight_servoNumber
 				,ProcessSteps_unload_pulldown_CuttingHeight_degrees
 				,ProcessSteps_unload_pulldown_CuttingHeight_msDelayPerDegreeMoved
 				,ProcessSteps_unload_pulldown_CuttingHeight_msDelayAfterCommandSent
 				,ProcessSteps_unload_pulldown_CuttingHeight_stepType
-				,numOfProcessSteps_unload_pulldown_CuttingHeight);
+				,numOfProcessSteps_unload_pulldown_CuttingHeight
+				,inputDelay);
 }
 
 void unload_deployCutter(){
@@ -1261,15 +1284,15 @@ void unload_cut(){
 }
 
 //design changes to the waste cup to servo connecting strap made this unnecessary
-// //palette only
-// void unload_avoidBin(){
-	// ExecuteSteps(ProcessSteps_unload_avoidBin_servoNumber
-				// ,ProcessSteps_unload_avoidBin_degrees
-				// ,ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved
-				// ,ProcessSteps_unload_avoidBin_msDelayAfterCommandSent
-				// ,ProcessSteps_unload_avoidBin_stepType
-				// ,numOfProcessSteps_unload_avoidBin);
-// }
+//palette only
+void unload_avoidBin(){
+	ExecuteSteps(ProcessSteps_unload_avoidBin_servoNumber
+				,ProcessSteps_unload_avoidBin_degrees
+				,ProcessSteps_unload_avoidBin_msDelayPerDegreeMoved
+				,ProcessSteps_unload_avoidBin_msDelayAfterCommandSent
+				,ProcessSteps_unload_avoidBin_stepType
+				,numOfProcessSteps_unload_avoidBin);
+}
 
 void unload_stowCutter(){
 	ExecuteSteps(ProcessSteps_unload_stowCutter_servoNumber
@@ -1448,11 +1471,11 @@ void loop() {
         printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN_LockingHeight) == 0) {
         updateLCD_line1(msg_PULLDOWN);
-        unload_pulldown_LockingHeight();
+        unload_pulldown_LockingHeight(inputMessage_NumberPart);
         printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN_CuttingHeight) == 0) {
         updateLCD_line1(msg_PULLDOWN);
-        unload_pulldown_CuttingHeight();
+        unload_pulldown_CuttingHeight(inputMessage_NumberPart);
         printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
@@ -1466,10 +1489,10 @@ void loop() {
         updateLCD_line1(msg_CUT);
         unload_cut();
         printWithParity_P(msg_OK);
-      // } else if (strcmp_P(inputMessage_TextPart, msg_unload_AVOIDBIN) == 0) {
-        // updateLCD_line1(msg_AVOID_WASTE_BIN);
-        // unload_avoidBin();
-        // printWithParity_P(msg_OK);
+      } else if (strcmp_P(inputMessage_TextPart, msg_unload_AVOIDBIN) == 0) {
+        updateLCD_line1(msg_AVOID_WASTE_BIN);
+        unload_avoidBin();
+        printWithParity_P(msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_stowCutter) == 0) {
         updateLCD_line1(msg_STOW_CUTTER);
         unload_stowCutter();
@@ -1529,6 +1552,9 @@ void loop() {
       } else if (strcmp_P(inputMessage_TextPart, msg_ReadFromEeprom_PatchVersion) == 0) {
           int patchVersion = EEPROM.read(32);
           PrintIntWithParityAsChar(patchVersion);
+	  } else if (strcmp_P(inputMessage_TextPart, msg_RetrieveCurrentFirmwareVersion) == 0) {
+		printWithParity_P(firmwareVersion);
+		printWithParity_P(PSTR("ok"));
       } else {
         // Handle command not found
         printWithParity_P(msg_COMMAND_NOT_FOUND);
