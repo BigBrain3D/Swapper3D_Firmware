@@ -1329,21 +1329,18 @@ void unload_dumpWaste(){
 void wiper_deploy(){
 	int pulselength = map(random(110, 120), 0, servos_maxAngle[s_Cutter_Rotate], servo_pwm_min, servo_pwm_max); //was random(115, 125)
 	pwm.setPWM(servos_pin[s_Cutter_Rotate], 0, pulselength);
-	delay(200);
+	delay(100); //200
 }
 
 //Stow the wiper with random delay
 void wiper_stow(){
-	random(0, 15);
+	// random(0, 15);
 	int pulselength = map(pos_Cutter_Rotate_Stowed, 0, servos_maxAngle[s_Cutter_Rotate], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Cutter_Rotate], 0, pulselength);
-	delay(200);
+	// delay(200);
 }
 
 
-// function that continuously reads incoming serial data, 
-//appending each character to a string until it encounters a newline character, 
-//which signals the end of a message. 
 // function that continuously reads incoming serial data, 
 //appending each character to a string until it encounters a newline character, 
 //which signals the end of a message. 
