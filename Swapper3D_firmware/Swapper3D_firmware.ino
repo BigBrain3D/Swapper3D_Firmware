@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <EEPROM.h>
 
-const char firmwareVersion[] PROGMEM = "1.1.0";
+const char firmwareVersion[] PROGMEM = "1.1.1";
 const char msg_RetrieveCurrentFirmwareVersion[] PROGMEM = "RetrieveCurrentFirmwareVersion";
 
 const double msPerStepAdjustment PROGMEM = 0.50; //this is divided by 100 and used to adjust the msPerStep for each step. make negative for faster than 7v servos, positive for slower 7v servos. 6V servos should be about 30% extra delay for each step.
