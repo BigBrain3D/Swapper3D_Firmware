@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <EEPROM.h>
 
-const char firmwareVersion[] PROGMEM = "1.1.1";
+const char firmwareVersion[] PROGMEM = "1.1.2";
 const char msg_RetrieveCurrentFirmwareVersion[] PROGMEM = "RetrieveCurrentFirmwareVersion";
 
 const double msPerStepAdjustment PROGMEM = 0.50; //this is divided by 100 and used to adjust the msPerStep for each step. make negative for faster than 7v servos, positive for slower 7v servos. 6V servos should be about 30% extra delay for each step.
@@ -163,7 +163,7 @@ byte ProcessSteps_LoadTool_servoNumber[numOfProcessSteps_LoadTool]={0};
 int ProcessSteps_LoadTool_degrees[numOfProcessSteps_LoadTool]={0}; //degrees
 byte ProcessSteps_LoadTool_msDelayPerDegreeMoved[numOfProcessSteps_LoadTool]={0}; 
 byte ProcessSteps_LoadTool_msDelayAfterCommandSent[numOfProcessSteps_LoadTool]={0}; 
-byte ProcessSteps_LoadTool_stepType[numOfProcessSteps_LoadTool]={0}; 
+byte ProcessSteps_LoadTool_stepType[numOfProcessSteps_LoadTool]={0};
 
 
 //30 total steps to Unload
@@ -252,8 +252,9 @@ const byte eeAutomaticProcess = 0;
 const byte eeManualProcess = 1;
 
 //error state button press
-const bool ErrorCheckingEnabed = false;
-const byte CheckButton_Pin = 3; //0; //digital pin zero(0)
+const bool ErrorCheckingEnabed = true; //set to false for testing purposes so that the Swap can be run without inserts
+const byte CheckButton_Pin = 13; //digital pin thirteen(13)
+bool EmptyButtonState = 0; //remember the initial button state on boot-up; that is now the 'Empty Insert' state
 bool InErrorState = false;
 //int CurrentProcessType = eeLoadTool;//load/unload
 
@@ -281,7 +282,6 @@ const char* getServoInitials(byte whichServo) {
   strcpy_P(buffer, (char*)pgm_read_word(&(servoInitials_table[whichServo])));
   return buffer;
 }
-
 
 int checkParity(char* message) {
   int count = 0;
@@ -313,7 +313,6 @@ void printWithParity(char* message) {
 	Serial.println(output);
   }
 
-
 void PrintIntWithParityAsChar(int number) {
   char numberStr[10];
   itoa(number, numberStr, 10); // Convert the integer to a string
@@ -322,7 +321,6 @@ void PrintIntWithParityAsChar(int number) {
   snprintf(output, sizeof(output), "%s%d", numberStr, parity);
   Serial.println(output);
 }
-
 
 void updateLCD(const char* PROGMEM message1, const char* PROGMEM message2, ...) {
   char buffer1[50];
@@ -404,9 +402,6 @@ void updateLCD_line2_with_step(byte servo, int angle, int step) {
   printWithParity(formatted_message);
 }
 
-
-
-
 char* generateMessage(byte stepNumber, byte servo, int angle) {
   const char* servo_name = getServoInitials(servo); // Assuming getServoName(0) returns "Tool_Rotate"
 
@@ -422,8 +417,6 @@ char* generateMessage(byte stepNumber, byte servo, int angle) {
   return formatted_message;
 }
 
-
-
 int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM){  
   int angleRange = MaxAngle - MinAngle;
   int pwmRange = maxPWM - minPWM;
@@ -435,13 +428,9 @@ int fMap(float desiredAngle, int MinAngle, int MaxAngle, int minPWM, int maxPWM)
 }
 
 
-//**** Holder Rotate (HR) ****
-//Servo 4
-int Adjustment_HolderRotate = 0;
-
 void ToolHolder_AlignToThisTool(int SelectThisTool){
 	int localPulseLength = 0;
-	int msDelayPerToolPostionToCompleteMovement = 50; 
+	int msDelayPerToolPostionToCompleteMovement = 75; //50; 
 	int msDelayPadding = 50;
 	int msDelayUntilRotationComplete = 0; //total ms to delay for the current tool holder rotation
 	float degreesPerTool = 14.4; //14.72; //computed angle is 14.4d per spline calced as 25T splines 360/25=14.4 //14.72; //last 14.80 //this works for 25T's but barely: 14.85; //19:14.95 slightly too much;
@@ -484,13 +473,13 @@ void SetSwapStepLocations(){
 	//Servo 0
 	//**** Tool Rotate (TR) ****
 	//next line is starting first 1st position
-	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 104 + Adjustment_Tool_Rotate; //103 //102; //104; //103;
-	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate; //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
+	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 106 + Adjustment_Tool_Rotate; //105 //103 //102; //104; //103;
+	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate; //100 //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 93 + Adjustment_Tool_Rotate; //97 //96 //95 //80, 85; //90; //83;//76 = 11
 	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 97 + Adjustment_Tool_Rotate; //99 //97 //98, 97; //95;
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //95; //97; //98; //96; //91; //86 = 5
 	int pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder = 109 + Adjustment_Tool_Rotate; //108 //106 //104;
-	int pos_Tool_Rotate_BetweenBothNozzles = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder - 7 + Adjustment_Tool_Rotate;
+	int pos_Tool_Rotate_BetweenBothNozzles = 104 + Adjustment_Tool_Rotate; //was 103
 	int pos_Tool_Rotate_ButtonToolCheck = 72 + Adjustment_Tool_Rotate; //74, 75, 74, 72, 75, 70 //72; //74; //75; //68;
 	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate; //280 //275, 282; //283; //284; //265; //270; //274;
 	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 283 + Adjustment_Tool_Rotate; //285, 286, 285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
@@ -507,14 +496,14 @@ void SetSwapStepLocations(){
 	//next line is starting first 1st position
 	//increasing this will lower all up/down moves. decreasing this will raise all up/down moves
 	int pos_Tool_Height_LowestLevel = 129 + Adjustment_Tool_Height; //125 //121 //Servo change 126; // below 126 it causes the servo to stall.  127; //126; //119; //117
-	int pos_Tool_Height_ButtingTheToolToTheLeftOfNext = 11 + 40 + Adjustment_Tool_Height; //44 //40 //37, Servo change 42;//we want to be at the height of the hex on the right nozzle //39; //40; //41;
-	int pos_Tool_Height_NozzleCollarLevel = 11 + 33 + Adjustment_Tool_Height; //37 //33 //30, Servo change 35; //38; //36; //29;
+	int pos_Tool_Height_ButtingTheToolToTheLeftOfNext = 50 + Adjustment_Tool_Height; //44 //40 //37, Servo change 42;//we want to be at the height of the hex on the right nozzle //39; //40; //41;
+	int pos_Tool_Height_NozzleCollarLevel = 42 + Adjustment_Tool_Height; //33 //37 //33 //30, Servo change 35; //38; //36; //29;
 	int pos_Tool_Height_ToolLoweredButStillInHolder = 59 + Adjustment_Tool_Height; //54 //Servo change 49; //42;
-	int pos_Tool_Height_ToolFullyInsertedInHolder = 11 + 32 + Adjustment_Tool_Height; //31 //27 //25, 22, Servo change 27; //29; //20; //13;
-	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 11 + 36 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
+	int pos_Tool_Height_ToolFullyInsertedInHolder = 43 + Adjustment_Tool_Height; //31 //27 //25, 22, Servo change 27; //29; //20; //13;
+	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 47 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder = 42 + Adjustment_Tool_Height; //41 //37 //39, 40, 39, 33, Servo change 38; //40; //42; //35; //28;
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure = 45 + Adjustment_Tool_Height;//44 //40 //Servo change 43; //42; //41; //42; //40; //42; //clunking? maybe 41?
-	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 11 + 40 + Adjustment_Tool_Height; //43 //42 //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
+	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 51 + Adjustment_Tool_Height; //43 //42 //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
 	int pos_Tool_Height_ToolLoweredButStillInExtruder = 72 + Adjustment_Tool_Height;//Aug8:52 //48 //Servo change 53; //53 moves up until the hotend tapper is past the edge of the inner bore of the heater block//56; //49;
 	int pos_Tool_Height_ToolLowered_CuttingHeight = 122 + Adjustment_Tool_Height; //122 //118 //117 //125 //113;//111, 108, 109; 107; //higher number moves down away from cutter leaving longer filament strand sticking out. //108; //Servo change 112;//works with new cutting sequence //110; //108; at 108 there was a single instance of cutting the heatbreak copper and it was ruined. //107; //99;
 	// int pos_Tool_Height_ToolLowered_BelowCutterJaws = 116 + Adjustment_Tool_Height; //116 //112 //Servo change 117; //110;
@@ -644,10 +633,10 @@ void SetSwapStepLocations(){
 	ProcessSteps_LoadTool_msDelayPerDegreeMoved[19] = 0;
 	ProcessSteps_LoadTool_msDelayPerDegreeMoved[20] = 0;
 
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[0] = 55; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[1] = 35; //150; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[2] = 35; //150; //160;
-	ProcessSteps_LoadTool_msDelayAfterCommandSent[3] = 45; //150; //80;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[0] = 75; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[1] = 50; //1145 //350 //150; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[2] = 50; //350 //150; //160;
+	ProcessSteps_LoadTool_msDelayAfterCommandSent[3] = 50; //450 //150; //80;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[4] = 20;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[5] = 25;
 	ProcessSteps_LoadTool_msDelayAfterCommandSent[6] = 50; //3; //130;
@@ -740,7 +729,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_pulldown_LockingHeight_msDelayAfterCommandSent[1] = 30; //110; //lock tool. lock moved to SetServoPosition()
 	
 	ProcessSteps_unload_pulldown_LockingHeight_stepType[0] = eeRegularStep; //was eeExtrude; but the extrude part is now handled by octoprint //lower to cutting height. extrude stage 2
-	ProcessSteps_unload_pulldown_LockingHeight_stepType[1] = eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
+	ProcessSteps_unload_pulldown_LockingHeight_stepType[1] = eeRegularStep; //Must be regular step so that the current angle of the tool lock servo is set. There may be a bug int he half degree type//eeAddHalfDegreePrecision; //eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //locking the nozzle-hotend into the end effector
 
 	//pulldown to cutting height
 	ProcessSteps_unload_pulldown_CuttingHeight_servoNumber[0] = s_Tool_Height; //down to cutting height
@@ -845,7 +834,7 @@ void SetSwapStepLocations(){
 	ProcessSteps_unload_stowInsert_degrees[5] = pos_Tool_Height_ToolFullyInsertedInHolder;
 	ProcessSteps_unload_stowInsert_degrees[6] = pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure;
 	ProcessSteps_unload_stowInsert_degrees[7] = pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder;
-	ProcessSteps_unload_stowInsert_degrees[8] = pos_Tool_Rotate_LeftOfToolInHolder; //pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
+	ProcessSteps_unload_stowInsert_degrees[8] = pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder; //pos_Tool_Rotate_BetweenBothNozzles; //pos_Tool_Rotate_LeftOfToolInHolder;
 	ProcessSteps_unload_stowInsert_degrees[9] = pos_Tool_Height_LowestLevel;
 	ProcessSteps_unload_stowInsert_degrees[10] = pos_Tool_Rotate_ButtonToolCheck;
 	ProcessSteps_unload_stowInsert_degrees[11] = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext;
@@ -923,7 +912,8 @@ void setup() {
   
   // Initialize the pin for the end effector insert full/empty checks
   // pinMode(CheckButton_Pin, INPUT_PULLUP);
-  pinMode(A3, INPUT_PULLUP);
+  pinMode(CheckButton_Pin, INPUT_PULLUP);
+  EmptyButtonState = digitalRead(CheckButton_Pin);
   delay(10);
 
   updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
@@ -946,14 +936,13 @@ bool CheckButton_Pressed()
 {
 	delay(10);
 	
-	// if(digitalRead(CheckButton_Pin)==1)
-	if(analogRead(CheckButton_Pin) > 1020)
+	if(digitalRead(CheckButton_Pin) == EmptyButtonState)
 	{
-		return true;
+		return false;
 	}
 	else
 	{
-		return false;
+		return true;
 	}
 }
 
@@ -1113,12 +1102,12 @@ void ProcessStep(int currentServo
       delay(msDelayAfterCommandSent);
       break;
       
-    case eeAddHalfDegreePrecision:
-      int precisionPulseLength = 0;
-      precisionPulseLength = fMap((float)targetAngle + (float)0.5, 0, servos_maxAngle[currentServo], servo_pwm_min, servo_pwm_max);
-      pwm.setPWM(servos_pin[currentServo], 0, precisionPulseLength);
-      delay(msDelayAfterCommandSent);
-      break;
+    // case eeAddHalfDegreePrecision:
+      // int precisionPulseLength = 0;
+      // precisionPulseLength = fMap((float)targetAngle + (float)0.5, 0, servos_maxAngle[currentServo], servo_pwm_min, servo_pwm_max);
+      // pwm.setPWM(servos_pin[currentServo], 0, precisionPulseLength);
+      // delay(msDelayAfterCommandSent);
+      // break;
   }
 }
 
@@ -1183,21 +1172,24 @@ void ExecuteSteps(byte ProcessSteps_servoNumber[]
     else
     {
       SetServoPosition(s_Tool_Rotate, 95, 0); //move to waiting/start position
+      delay(400);
 
-		//unlock end tool:
+      //unlock end tool:
       pulselength = map(180, 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
       pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
-      delay(200);
+      delay(400);
       
       do 
       {
         buttonPress = analogRead(0);
       } while (buttonPress < 600 || buttonPress > 700); //if S button press then retry
   
-		//lock the end tool before retry
+      //set the tool lock to its current position 
+      //should be locked if it SHOULD be full
+      //should be Unlocked if it SHOULD be empty
       pulselength = map(servos_currentAngle[s_Tool_Lock], 0, servos_maxAngle[s_Tool_Lock], servo_pwm_min, servo_pwm_max);
       pwm.setPWM(servos_pin[s_Tool_Lock], 0, pulselength);
-      delay(200);
+      delay(400);
   
       printWithParity_P(msg_ERROR_WAS_RESET);
       updateLCD_line1(msg_LOADING);
