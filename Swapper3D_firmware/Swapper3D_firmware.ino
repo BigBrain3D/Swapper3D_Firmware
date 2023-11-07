@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <EEPROM.h>
 
-const char firmwareVersion[] PROGMEM = "1.1.2";
+const char firmwareVersion[] PROGMEM = "1.1.3";
 const char msg_RetrieveCurrentFirmwareVersion[] PROGMEM = "RetrieveCurrentFirmwareVersion";
 
 const double msPerStepAdjustment PROGMEM = 0.50; //this is divided by 100 and used to adjust the msPerStep for each step. make negative for faster than 7v servos, positive for slower 7v servos. 6V servos should be about 30% extra delay for each step.
@@ -1326,10 +1326,8 @@ void wiper_deploy(){
 
 //Stow the wiper with random delay
 void wiper_stow(){
-	// random(0, 15);
 	int pulselength = map(pos_Cutter_Rotate_Stowed, 0, servos_maxAngle[s_Cutter_Rotate], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Cutter_Rotate], 0, pulselength);
-	// delay(200);
 }
 
 
