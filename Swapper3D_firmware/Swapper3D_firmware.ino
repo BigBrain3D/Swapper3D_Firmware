@@ -16,11 +16,11 @@ const char msg_LOAD_INSERT[] PROGMEM = "load_insert";
 const char msg_unload_CONNECT[] PROGMEM = "unload_connect";
 const char msg_unload_PULLDOWN_LockingHeight[] PROGMEM = "unload_pulldown_lockingheight";
 const char msg_unload_PULLDOWN_CuttingHeight[] PROGMEM = "unload_pulldown_cuttingheight";
-const char msg_unload_DEPLOYCUTTER[] PROGMEM = "unload_deploycutter";
+const char msg_unload_DEPLOYCUTTER[] PROGMEM = "unload_deploycutter"; //unload_deploycutter1
 const char msg_unload_DEPLOYCUTTER_CONNECT_WITH_FILAMENT_GUIDE[] PROGMEM = "unload_deploycutter_guide";
 const char msg_unload_CUT[] PROGMEM = "unload_cut";
 const char msg_unload_AVOIDBIN[] PROGMEM = "unload_AvoidBin";
-const char msg_unload_stowCutter[] PROGMEM = "unload_stowCutter";
+const char msg_unload_stowCutter[] PROGMEM = "unload_stowCutter"; //unload_stowCutter0
 const char msg_unload_stowInsert[] PROGMEM = "unload_stowInsert";
 const char msg_unload_dumpWaste[] PROGMEM = "unload_dumpWaste";
 const char msg_unloadED_MESSAGE[] PROGMEM = "unloaded_message";
@@ -525,15 +525,21 @@ void SetSwapStepLocations(){
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
 	//next line is starting first 1st position
-	pos_Cutter_Rotate_Stowed = 24 + Adjustment_Cutter_Rotate; //27 //25;//1;//must be greater than 0. 0 causes major jittering. Something about 25 works better than 26. 26 had lots of jitter.
-	int pos_Cutter_Rotate_Cutting = 120 + Adjustment_Cutter_Rotate; //123 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
+	pos_Cutter_Rotate_Stowed = 15 + Adjustment_Cutter_Rotate; //27 //25;//1;//must be greater than 0. 0 causes major jittering. Something about 25 works better than 26. 26 had lots of jitter.
+	//pos_Cutter_Rotate_Cutting: 120 rotates to the cross. 
+  //pos_Cutter_Rotate_Cutting: 128 is max rotation before guard strikes the frame. 
+  //pos_Cutter_Rotate_Cutting: 123 rotates past the cross to the straight part of the blade
+  int pos_Cutter_Rotate_Cutting = 123 + Adjustment_Cutter_Rotate; //123 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 	int pos_Cutter_Rotate_ConnectWithFilamentGuide = 123 + Adjustment_Cutter_Rotate; //127 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 
 	//**** Cutter Action (CA) ****
 	//Servo 6
 	//next line is starting first 1st position
 	int pos_Cutter_Action_Open = 175 + Adjustment_Cutter_Action; //160
-	int pos_Cutter_Action_Cut = 33 + Adjustment_Cutter_Action; //15 //0 //20; //40; //6; //7; //21;
+  //pos_Cutter_Action_Cut: 15 is the max if the guard is cut back out of the way, at that poing the cutter handle will impinge on the cutter arm
+  //pos_Cutter_Action_Cut: 33 is the max with the guard and right most screw in place
+  //pos_Cutter_Action_Cut: 28 is the max if the right most screw is removed
+	int pos_Cutter_Action_Cut = 33 + Adjustment_Cutter_Action; //33 #on Aug 19th 2024 changed from 33 to 30, if the guard screw is removed it could be reduced to 28-29, and if the gaurd was cut it could be reduced to 15.  //15 //0 //20; //40; //6; //7; //21;
 
 	//**** Waste Cup Action (WA) (micro 280d servo) ****
 	//Servo 7
