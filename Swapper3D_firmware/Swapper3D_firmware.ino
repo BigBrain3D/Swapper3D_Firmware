@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <EEPROM.h>
 
+
 const char firmwareVersion[] PROGMEM = "1.1.3";
 const char msg_RetrieveCurrentFirmwareVersion[] PROGMEM = "RetrieveCurrentFirmwareVersion";
 
@@ -29,6 +30,8 @@ const char msg_WIPER_DEPLOY[] PROGMEM = "wiper_deploy";
 const char msg_WIPER_STOW[] PROGMEM = "wiper_stow";
 const char msg_COMMAND_NOT_FOUND[] PROGMEM = "Command not found";
 const char msg_READY_TO_SWAP[] PROGMEM = "Ready to Swap!";
+const char msg_INSERT_NUMBER[] PROGMEM = "InsertNumber"; //Added Aug 23th 2024
+const char msg_INSERT_FORMAT[] PROGMEM = "Insert: %d";
 const char msg_INSERT_EMPTY[] PROGMEM = "Insert: Empty";
 const char msg_CONNECT[] PROGMEM = "Connect";
 const char msg_PULLDOWN[] PROGMEM = "Pulldown";
@@ -41,7 +44,6 @@ const char msg_DUMP_WASTE[] PROGMEM = "Dump waste";
 const char msg_DEPLOY_WIPER[] PROGMEM = "Deploy wiper";
 const char msg_STOW_WIPER[] PROGMEM = "Stow wiper";
 const char msg_WIPER_DEPLOYED[] PROGMEM = "Wiper deployed";
-const char msg_INSERT_FORMAT[] PROGMEM = "Insert: %d";
 const char msg_SWAPPING_FORMAT_1[] PROGMEM = "Swapping -> %d";
 const char msg_SWAPPING_FORMAT_2[] PROGMEM = "Swapping %d -> %d";
 const char msg_ParityCheckFailed[] PROGMEM = "Parity check failed";
@@ -293,6 +295,29 @@ int checkParity(char* message) {
     }
   }
   return ~count & 1; // returns 1 for odd parity, 0 for even parity
+}
+
+
+void printWithParity_Combined(char inputMessage_TextPart[], const char* PROGMEM message) {
+  char buffer[50];
+  
+  // Copy the inputMessage_TextPart to the buffer
+  strncpy(buffer, inputMessage_TextPart, sizeof(buffer) - 1);
+  buffer[sizeof(buffer) - 1] = '\0';  // Ensure null-termination
+  
+  // Concatenate the underscore and the message (e.g., "_ok")
+  strncat(buffer, "_", sizeof(buffer) - strlen(buffer) - 1);
+  strncat_P(buffer, message, sizeof(buffer) - strlen(buffer) - 1);
+  
+  // Calculate parity of the combined string (excluding the parity itself)
+  int parity = checkParity(buffer);
+  
+  // Prepare the final output string in the format "text_okParity"
+  char output[60];
+  snprintf(output, sizeof(output), "%s%d", buffer, parity);
+  
+  // Print the final output
+  Serial.println(output);
 }
 
 void printWithParity_P(const char* PROGMEM message) {
@@ -1456,86 +1481,82 @@ void loop() {
       } else if (strcmp_P(inputMessage_TextPart, msg_LOAD_INSERT) == 0) {
         insertNumber = inputMessage_NumberPart;
         load_insert(insertNumber);
-        printWithParity_P(msg_OK);
-        updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CONNECT) == 0) {
         updateLCD_line1(msg_CONNECT);
         unload_connect();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN_LockingHeight) == 0) {
         updateLCD_line1(msg_PULLDOWN);
         unload_pulldown_LockingHeight(inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_PULLDOWN_CuttingHeight) == 0) {
         updateLCD_line1(msg_PULLDOWN);
         unload_pulldown_CuttingHeight(inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
         unload_deployCutter();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER_CONNECT_WITH_FILAMENT_GUIDE) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
         unload_deployCutter_ConnectWithFilamentGuide();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_CUT) == 0) {
         updateLCD_line1(msg_CUT);
         unload_cut();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_AVOIDBIN) == 0) {
         updateLCD_line1(msg_AVOID_WASTE_BIN);
         unload_avoidBin();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_stowCutter) == 0) {
         updateLCD_line1(msg_STOW_CUTTER);
         unload_stowCutter();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_stowInsert) == 0) {
         updateLCD_line1(msg_STOW_INSERT);
         unload_stowInsert();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_dumpWaste) == 0) {
         updateLCD_line1(msg_DUMP_WASTE);
         unload_dumpWaste();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unloadED_MESSAGE) == 0) {
         insertNumber = 0;
         updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_SWAP_MESSAGE) == 0) {
         updateLCD_line1(insertNumber == 0 ? msg_SWAPPING_FORMAT_1 : msg_SWAPPING_FORMAT_2, insertNumber, inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_WIPER_DEPLOY) == 0) {
         updateLCD_line1(msg_DEPLOY_WIPER);
         wiper_deploy();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
         updateLCD_line1(msg_WIPER_DEPLOYED);
       } else if (strcmp_P(inputMessage_TextPart, msg_WIPER_STOW) == 0) {
-        updateLCD_line1(msg_STOW_WIPER);
+        // updateLCD_line1(msg_STOW_WIPER); //commented out on Aug 23rd 2024 because LCD messages should be controlled in Octoprint
         wiper_stow();
-        printWithParity_P(msg_OK);
-        updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
+		printWithParity_Combined(inputString, msg_OK);
+      }  else if (strcmp_P(inputMessage_TextPart, msg_INSERT_NUMBER) == 0) { //updated aug 23rd 2024
+		printWithParity_Combined(inputString, msg_OK);
+        delay(3000);
+        updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, inputMessage_NumberPart);
       } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOn) == 0) {
         boreAlignOn();
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_BoreAlignOff) == 0) {
         boreAlignOff();
-        printWithParity_P(msg_OK);
-      }  else if (strcmp_P(inputMessage_TextPart, msg_WIPER_STOW) == 0) {
-        updateLCD_line1(msg_STOW_WIPER);
-        wiper_stow();
-        printWithParity_P(msg_OK);
-        delay(3000);
-        updateLCD(msg_READY_TO_SWAP, msg_INSERT_FORMAT, insertNumber);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_MajorVersion) == 0) {
         EEPROM.write(30, inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_MinorVersion) == 0) {
         EEPROM.write(31, inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_WriteToEeprom_PatchVersion) == 0) {
         EEPROM.write(32, inputMessage_NumberPart);
-        printWithParity_P(msg_OK);
+		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_ReadFromEeprom_MajorVersion) == 0) {
         int majorVersion = EEPROM.read(30);
           PrintIntWithParityAsChar(majorVersion);
