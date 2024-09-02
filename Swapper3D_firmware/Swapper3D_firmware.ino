@@ -562,7 +562,7 @@ void SetSwapStepLocations(){
 	//pos_Cutter_Rotate_Cutting: 120 rotates to the cross. 
   //pos_Cutter_Rotate_Cutting: 128 is max rotation before guard strikes the frame. 
   //pos_Cutter_Rotate_Cutting: 123 rotates past the cross to the straight part of the blade
-  int pos_Cutter_Rotate_Cutting = 123 + Adjustment_Cutter_Rotate; //123 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
+  // Sep 2nd 2024: this value isn't used anymore, look in void unload_deployCutter //int pos_Cutter_Rotate_Cutting = 123 + Adjustment_Cutter_Rotate; //123 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 	int pos_Cutter_Rotate_ConnectWithFilamentGuide = 123 + Adjustment_Cutter_Rotate; //127 //122; //125; //126, 124, 122; //121; //122; //121; //122; //120; //124; //126; //127; //128;//get closer but lower the cutting height a little //126; //127; 127 is too close //126; //or maybe 127? //121; //99;
 
 	//**** Cutter Action (CA) ****
@@ -789,7 +789,7 @@ void SetSwapStepLocations(){
 
 	//void SetProcessSteps_unload_deployCutter(){
 	ProcessSteps_unload_deployCutter_servoNumber[0] = s_Cutter_Rotate;
-	ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting;
+	// ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting; //sEP 2ND 2024: this value isn't used anymore, look in void unload_deployCutter
 	ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
 	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[0] = 65; //650; //550; //500; //190; //cutter rotate
 	ProcessSteps_unload_deployCutter_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
@@ -810,7 +810,7 @@ void SetSwapStepLocations(){
 	
 	ProcessSteps_cutter_cut_msDelayPerDegreeMoved[0] = 0;
 	
-	ProcessSteps_cutter_cut_msDelayAfterCommandSent[0] = 70; 
+	ProcessSteps_cutter_cut_msDelayAfterCommandSent[0] = 10; //70;  //updated Sep 2nd 2024 the time delay was excessive, probably not updated since we went to 10x this number
 	
 	ProcessSteps_cutter_cut_stepType[0] = eeRegularStep;
 	
@@ -822,7 +822,7 @@ void SetSwapStepLocations(){
 	
 	ProcessSteps_cutter_open_msDelayPerDegreeMoved[0] = 0;
 	
-	ProcessSteps_cutter_open_msDelayAfterCommandSent[0] = 70; 
+	ProcessSteps_cutter_open_msDelayAfterCommandSent[0] = 10; //70; //updated Sep 2nd 2024 the time delay was excessive, probably not updated since we went to 10x this number
 	
 	ProcessSteps_cutter_open_stepType[0] = eeRegularStep;
 	
@@ -1294,7 +1294,9 @@ void unload_pulldown_CuttingHeight(int inputDelay = 0){
 				,inputDelay);
 }
 
-void unload_deployCutter(){
+void unload_deployCutter(int DeployAngle){
+	ProcessSteps_unload_deployCutter_degrees[0] = DeployAngle;
+	
 	ExecuteSteps(ProcessSteps_unload_deployCutter_servoNumber
 				,ProcessSteps_unload_deployCutter_degrees
 				,ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved
@@ -1520,7 +1522,8 @@ void loop() {
 		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
-        unload_deployCutter();
+		Serial.println(inputMessage_NumberPart);
+        unload_deployCutter(inputMessage_NumberPart);
 		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER_CONNECT_WITH_FILAMENT_GUIDE) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
