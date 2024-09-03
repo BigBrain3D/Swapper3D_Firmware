@@ -507,17 +507,16 @@ void CheckToolRotateHomePosition()
 	//set TH to homing position
 	pulselength = map(pos_Tool_Height_Homing, 0, servos_maxAngle[s_Tool_Height], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Tool_Height], 0, pulselength);	
-	Serial.println("here2");
 	delay(100);
 	
-	Serial.print("Homing_offset_ToolRotate Initial Value:");
-	Serial.println(Homing_offset_ToolRotate);
+	// Serial.print("Homing_offset_ToolRotate Initial Value:");
+	// Serial.println(Homing_offset_ToolRotate);
 	
-	Serial.print("AngleToTest:");
-	Serial.println(AngleToTest);
+	// Serial.print("AngleToTest:");
+	// Serial.println(AngleToTest);
 	
-	Serial.print("maxHomingAngle:");
-	Serial.println(maxHomingAngle); 
+	// Serial.print("maxHomingAngle:");
+	// Serial.println(maxHomingAngle); 
 	
 	//increment the TR angle by 1 at a time
 	//check that the button is pressed
@@ -525,8 +524,8 @@ void CheckToolRotateHomePosition()
 	//output the home position serial
 	while(AngleToTest > maxHomingAngle)
 	{	
-		Serial.print("AngleToTest:");
-		Serial.println(AngleToTest);
+		// Serial.print("AngleToTest:");
+		// Serial.println(AngleToTest);
 		
 		pulselength = map(AngleToTest, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
 		pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
@@ -535,7 +534,7 @@ void CheckToolRotateHomePosition()
 		//if the check button is pressed then the TR is homed
 		if(CheckButton_Pressed())
 		{
-			Serial.print("button pressed");
+			// Serial.print("button pressed");
 
 			homeFound = true;
 			break;
@@ -550,50 +549,54 @@ void CheckToolRotateHomePosition()
 	//adjust as necessary
 	if (homeFound)
 	{
-		Serial.println("Home found");
-		Serial.print("Home TR position:");
-		Serial.println(AngleToTest);
+		// Serial.println("Home found");
+		// Serial.print("Home TR position:");
+		// Serial.println(AngleToTest);
 		
-		Serial.print("Degrees from start:");
-		Serial.println(pos_Tool_Rotate_HomeStart - AngleToTest);
+		// Serial.print("Degrees from start:");
+		// Serial.println(pos_Tool_Rotate_HomeStart - AngleToTest);
 		
-		Serial.print("Offset from expected:");
-		Serial.println((pos_Tool_Rotate_HomeStart - AngleToTest - expectedDegreesFromHomeStart));
+		// Serial.print("Offset from expected:");
+		// Serial.println((pos_Tool_Rotate_HomeStart - AngleToTest - expectedDegreesFromHomeStart));
 		
 		
-		Serial.print("Homing_offset_ToolRotate Adjusted:");
-		Serial.println(Homing_offset_ToolRotate);
+		// Serial.print("Homing_offset_ToolRotate Adjusted:");
+		// Serial.println(Homing_offset_ToolRotate);
 		
 		suggested_Homing_offset_ToolRotate -= (pos_Tool_Rotate_HomeStart - AngleToTest - expectedDegreesFromHomeStart);
 		
-		if(suggested_Homing_offset_ToolRotate == 0)
+		if(suggested_Homing_offset_ToolRotate != 0)
 		{
-			Serial.println("No Adjustment needed; Current offset is correct.");
-		}
-		else
-		{			
 			Homing_offset_ToolRotate = suggested_Homing_offset_ToolRotate;
-			Serial.print("Homing_offset_ToolRotate Adjusted:");
-			Serial.println(Homing_offset_ToolRotate);
-		}			
+		}
+		// else
+		// {			
+			// Serial.print("Homing_offset_ToolRotate Adjusted:");
+			// Serial.println(Homing_offset_ToolRotate);
+			// Serial.println("No Adjustment needed; Current offset is correct.");
+		// }			
+		
+		
+		//set TR to Start Position
+		pulselength = map(pos_Tool_Rotate_HomeStart, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+		pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
+		delay(50);
+		
+		//refresh the tool rotate positions from eeprom
+		SetSwapStepLocations();
+
+		//reset the 
+		SetServosToStartPositions();
 		
 	}
-	//Error because home was not found 
-	else
-	{
-		Serial.println("ERROR, Home NOT found");
-		Serial.print("Last angle checked:");
-		Serial.println(AngleToTest);
-	}
-	
-	//adjust the TR eeprom value
-//add code here
-	
-	//refresh the tool rotate positions from eeprom
-	SetSwapStepLocations();
+	// //Error because home was not found 
+	// else
+	// {
+		// Serial.println("ERROR, Home NOT found");
+		// Serial.print("Last angle checked:");
+		// Serial.println(AngleToTest);
+	// }
 
-	//reset the 
-	SetServosToStartPositions();
 }
 
 void SetServosToStartPositions()
@@ -1086,7 +1089,7 @@ void setup() {
   
   SetServosToStartPositions(); //added Sep 3rd 2024 for TR homing
   
-  CheckToolRotateHomePosition();
+  //CheckToolRotateHomePosition(); //don't put this here. It messes with the octoprint connection on startup. Instead, once octoprint connects we'll call the TR home directly from octoprint.
   
   updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
 }
