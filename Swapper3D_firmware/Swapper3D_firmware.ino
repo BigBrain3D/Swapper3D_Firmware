@@ -69,6 +69,7 @@ const char msg_ReadFromEeprom_MinorVersion[] PROGMEM = "readminor";
 const char msg_ReadFromEeprom_PatchVersion[] PROGMEM = "readpatch";
 const char msg_BoreAlignOn[] PROGMEM = "borealignon";
 const char msg_BoreAlignOff[] PROGMEM = "borealignoff";
+const char msg_HomeToolRotate[] PROGMEM = "hometoolrotate"; //hometoolrotate0
 
 const char servoInitial_0[] PROGMEM = "TR";
 const char servoInitial_1[] PROGMEM = "TH";
@@ -271,7 +272,7 @@ bool InErrorState = false;
 //tool holder rotation and selection
 bool firstPositionCommandGiven = false;
 const int servoMinAngle = 0;
-float pos_Tool_Holder_FirstTool = 15; //11.7; //11; //12; //2; //note: eeprom offset is added at runtime so cannot be const
+float pos_Tool_Holder_FirstTool = 0;
 bool toolIsLoaded = false;
 int CurrentTool = 0;
 
@@ -285,6 +286,7 @@ const int numMsUntilLock = 50; //100; //200; //10ms per degree currently
 
 int pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 0;
 int pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 0;
+int Homing_offset_ToolRotate = 0;
 
 
 const char* getServoInitials(byte whichServo) {
@@ -483,6 +485,132 @@ void ToolHolder_AlignToThisTool(int SelectThisTool){
 	CurrentTool = SelectThisTool;  
 }
 
+void CheckToolRotateHomePosition()
+{		
+	int Adjustment_Tool_Rotate = map(EEPROM.read(0), 100, 140, -20, 20);
+	int Adjustment_Tool_Height = map(EEPROM.read(1), 100, 140, -20, 20);
+	int pos_Tool_Rotate_HomeStart = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext - 10; // this is the position of TR at the start of the homing routine
+	//the expectedDegreesFromHomeStart is the number to adjust if rotate isn't working correctly.
+	//because then it will automatically adjust to this number on homing it and startup.
+	int expectedDegreesFromHomeStart = 9; //6; //this is the number of degrees that we expect to move from the home start postion to the homing switch (re: check button) being pressed
+	int pos_Tool_Height_Homing = 105 + Adjustment_Tool_Height;
+	int AngleToTest = pos_Tool_Rotate_HomeStart;
+	int maxHomingAngle = AngleToTest - 21;
+	bool homeFound = false;
+	int suggested_Homing_offset_ToolRotate = 0;
+
+	//set TR to Start Position
+	int pulselength = map(pos_Tool_Rotate_HomeStart, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+	pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
+
+	
+	//set TH to homing position
+	pulselength = map(pos_Tool_Height_Homing, 0, servos_maxAngle[s_Tool_Height], servo_pwm_min, servo_pwm_max);
+	pwm.setPWM(servos_pin[s_Tool_Height], 0, pulselength);	
+	Serial.println("here2");
+	delay(100);
+	
+	Serial.print("Homing_offset_ToolRotate Initial Value:");
+	Serial.println(Homing_offset_ToolRotate);
+	
+	Serial.print("AngleToTest:");
+	Serial.println(AngleToTest);
+	
+	Serial.print("maxHomingAngle:");
+	Serial.println(maxHomingAngle); 
+	
+	//increment the TR angle by 1 at a time
+	//check that the button is pressed
+	//if the button is press exit loop
+	//output the home position serial
+	while(AngleToTest > maxHomingAngle)
+	{	
+		Serial.print("AngleToTest:");
+		Serial.println(AngleToTest);
+		
+		pulselength = map(AngleToTest, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+		pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
+		delay(500);
+		
+		//if the check button is pressed then the TR is homed
+		if(CheckButton_Pressed())
+		{
+			Serial.print("button pressed");
+
+			homeFound = true;
+			break;
+		}
+		
+		 AngleToTest--;
+	}
+	
+	
+	//record the degrees moved
+	//compare to expected
+	//adjust as necessary
+	if (homeFound)
+	{
+		Serial.println("Home found");
+		Serial.print("Home TR position:");
+		Serial.println(AngleToTest);
+		
+		Serial.print("Degrees from start:");
+		Serial.println(pos_Tool_Rotate_HomeStart - AngleToTest);
+		
+		Serial.print("Offset from expected:");
+		Serial.println((pos_Tool_Rotate_HomeStart - AngleToTest - expectedDegreesFromHomeStart));
+		
+		
+		Serial.print("Homing_offset_ToolRotate Adjusted:");
+		Serial.println(Homing_offset_ToolRotate);
+		
+		suggested_Homing_offset_ToolRotate -= (pos_Tool_Rotate_HomeStart - AngleToTest - expectedDegreesFromHomeStart);
+		
+		if(suggested_Homing_offset_ToolRotate == 0)
+		{
+			Serial.println("No Adjustment needed; Current offset is correct.");
+		}
+		else
+		{			
+			Homing_offset_ToolRotate = suggested_Homing_offset_ToolRotate;
+			Serial.print("Homing_offset_ToolRotate Adjusted:");
+			Serial.println(Homing_offset_ToolRotate);
+		}			
+		
+	}
+	//Error because home was not found 
+	else
+	{
+		Serial.println("ERROR, Home NOT found");
+		Serial.print("Last angle checked:");
+		Serial.println(AngleToTest);
+	}
+	
+	//adjust the TR eeprom value
+//add code here
+	
+	//refresh the tool rotate positions from eeprom
+	SetSwapStepLocations();
+
+	//reset the 
+	SetServosToStartPositions();
+}
+
+void SetServosToStartPositions()
+{	
+	int pulselength = 0;
+
+	for(int i; i < 8; i++)
+	{
+		pulselength = map(servos_currentAngle[i], 0, servos_maxAngle[i], servo_pwm_min, servo_pwm_max);
+		pwm.setPWM(servos_pin[i], 0, pulselength);	
+		delay(100);
+	}
+
+	delay(300);
+	//align to the first tool
+	ToolHolder_AlignToThisTool(0);
+}
 
 void SetSwapStepLocations(){
 	int pulselength = 0;
@@ -499,30 +627,31 @@ void SetSwapStepLocations(){
 
 
 	//apply adjustment from EEPROM
-	pos_Tool_Holder_FirstTool = pos_Tool_Holder_FirstTool + Adjustment_Holder_Rotate;
+	// pos_Tool_Holder_FirstTool = pos_Tool_Holder_FirstTool + Adjustment_Holder_Rotate; //this was causeing a stacking error
+	pos_Tool_Holder_FirstTool = 15 + Adjustment_Holder_Rotate; //11.7; //11; //12; //2; //note: eeprom offset is added at runtime so cannot be const
 	
 	
 //position variables
 	//Servo 0
 	//**** Tool Rotate (TR) ****
 	//next line is starting first 1st position
-	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 106 + Adjustment_Tool_Rotate; //105 //103 //102; //104; //103;
-	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate; //100 //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
-	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 93 + Adjustment_Tool_Rotate; //97 //96 //95 //80, 85; //90; //83;//76 = 11
-	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 97 + Adjustment_Tool_Rotate; //99 //97 //98, 97; //95;
+	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 105 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //106 //105 //103 //102; //104; //103;
+	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //100 //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
+	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 93 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //97 //96 //95 //80, 85; //90; //83;//76 = 11
+	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 97 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //99 //97 //98, 97; //95;
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //95; //97; //98; //96; //91; //86 = 5
-	int pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder = 109 + Adjustment_Tool_Rotate; //108 //106 //104;
-	int pos_Tool_Rotate_BetweenBothNozzles = 104 + Adjustment_Tool_Rotate; //was 103
-	int pos_Tool_Rotate_ButtonToolCheck = 72 + Adjustment_Tool_Rotate; //74, 75, 74, 72, 75, 70 //72; //74; //75; //68;
-	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate; //280 //275, 282; //283; //284; //265; //270; //274;
-	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 283 + Adjustment_Tool_Rotate; //285, 286, 285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
-	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate; //292 //293 291; // 310; //305; //297;
-	int pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar = 291 + Adjustment_Tool_Rotate; //290 //291, 293 291; //285;
-	int pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle = 289 + Adjustment_Tool_Rotate; //new
-	int pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle = 285 + Adjustment_Tool_Rotate; //new
+	int pos_Tool_Rotate_ReleaseFromHotendUnderToolHolder = 109 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //108 //106 //104;
+	int pos_Tool_Rotate_BetweenBothNozzles = 104 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //was 103
+	int pos_Tool_Rotate_ButtonToolCheck = 72 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //74, 75, 74, 72, 75, 70 //72; //74; //75; //68;
+	int pos_Tool_Rotate_UnderExtruder_JerkConnectWithNozzleCollar = 281 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //280 //275, 282; //283; //284; //265; //270; //274;
+	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 283 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //285, 286, 285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
+	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //292 //293 291; // 310; //305; //297;
+	int pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar = 291 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //290 //291, 293 291; //285;
+	int pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle = 289 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //new
+	int pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle = 285 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //new
 	
-	int pos_Tool_Rotate_WaitingForunloadCommand = 148 + Adjustment_Tool_Rotate; //147 //140;
-	int pos_Tool_Rotate_PastWasteCup = 259 + Adjustment_Tool_Rotate; //258 //251;
+	int pos_Tool_Rotate_WaitingForunloadCommand = 148 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //147 //140;
+	int pos_Tool_Rotate_PastWasteCup = 259 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //258 //251;
 
 	//**** Tool Height (TH) ****
 	//Servo 1
@@ -592,15 +721,8 @@ void SetSwapStepLocations(){
 	servos_currentAngle[s_Cutter_Action] = pos_Cutter_Action_Open;//
 	servos_currentAngle[s_WasteCup_Action] = pos_WasteCup_Action_Fill;//
 	
-	for(int i; i < 8; i++)
-	{	
-		pulselength = map(servos_currentAngle[i], 0, servos_maxAngle[i], servo_pwm_min, servo_pwm_max);
-		pwm.setPWM(servos_pin[i], 0, pulselength);	
-		delay(100);
-	}
-
-	//align to the first tool
-	ToolHolder_AlignToThisTool(0);
+	//added Sep3rd 2024 for TR homing
+	SetServosToStartPositions();
 
 
 	//void SetProcessSteps_Load(){
@@ -789,7 +911,7 @@ void SetSwapStepLocations(){
 
 	//void SetProcessSteps_unload_deployCutter(){
 	ProcessSteps_unload_deployCutter_servoNumber[0] = s_Cutter_Rotate;
-	// ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting; //sEP 2ND 2024: this value isn't used anymore, look in void unload_deployCutter
+	// ProcessSteps_unload_deployCutter_degrees[0] = pos_Cutter_Rotate_Cutting; //sEP 2ND 2024: this value isn't used anymore, look in void unload_deployCutter, the angle is now set in octoprint code (should be a setting!)
 	ProcessSteps_unload_deployCutter_msDelayPerDegreeMoved[0] = 6;//this makes the end position more repeatable than allowing the servo to control it's deceleration //6; //0; //cutter rotate
 	ProcessSteps_unload_deployCutter_msDelayAfterCommandSent[0] = 65; //650; //550; //500; //190; //cutter rotate
 	ProcessSteps_unload_deployCutter_stepType[0] = eeRegularStep; //eeAddHalfDegreePrecision; //eeRegularStep; //rotate to cutting position
@@ -810,7 +932,7 @@ void SetSwapStepLocations(){
 	
 	ProcessSteps_cutter_cut_msDelayPerDegreeMoved[0] = 0;
 	
-	ProcessSteps_cutter_cut_msDelayAfterCommandSent[0] = 10; //70;  //updated Sep 2nd 2024 the time delay was excessive, probably not updated since we went to 10x this number
+	ProcessSteps_cutter_cut_msDelayAfterCommandSent[0] = 100;  //70;
 	
 	ProcessSteps_cutter_cut_stepType[0] = eeRegularStep;
 	
@@ -822,7 +944,7 @@ void SetSwapStepLocations(){
 	
 	ProcessSteps_cutter_open_msDelayPerDegreeMoved[0] = 0;
 	
-	ProcessSteps_cutter_open_msDelayAfterCommandSent[0] = 10; //70; //updated Sep 2nd 2024 the time delay was excessive, probably not updated since we went to 10x this number
+	ProcessSteps_cutter_open_msDelayAfterCommandSent[0] = 70;
 	
 	ProcessSteps_cutter_open_stepType[0] = eeRegularStep;
 	
@@ -954,14 +1076,18 @@ void setup() {
   pwm.setOscillatorFrequency(27000000);
   pwm.setPWMFreq(300);  // Digital servos run at 300Hz updates
   
-  SetSwapStepLocations();
-  
   // Initialize the pin for the end effector insert full/empty checks
-  // pinMode(CheckButton_Pin, INPUT_PULLUP);
   pinMode(CheckButton_Pin, INPUT_PULLUP);
   EmptyButtonState = digitalRead(CheckButton_Pin);
   delay(10);
 
+  //adjusted on Sep 3rd 2024 to accomodate the TR homing routine which requires the EmptyButtonState be determined before here.
+  SetSwapStepLocations();
+  
+  SetServosToStartPositions(); //added Sep 3rd 2024 for TR homing
+  
+  CheckToolRotateHomePosition();
+  
   updateLCD(msg_READY_TO_SWAP, msg_INSERT_EMPTY);
 }
 
@@ -1522,7 +1648,6 @@ void loop() {
 		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER) == 0) {
         updateLCD_line1(msg_DEPLOY_CUTTER);
-		Serial.println(inputMessage_NumberPart);
         unload_deployCutter(inputMessage_NumberPart);
 		printWithParity_Combined(inputString, msg_OK);
       } else if (strcmp_P(inputMessage_TextPart, msg_unload_DEPLOYCUTTER_CONNECT_WITH_FILAMENT_GUIDE) == 0) {
@@ -1600,6 +1725,9 @@ void loop() {
 	  } else if (strcmp_P(inputMessage_TextPart, msg_RetrieveCurrentFirmwareVersion) == 0) {
 		printWithParity_P(firmwareVersion);
 		printWithParity_P(PSTR("ok"));
+	  } else if (strcmp_P(inputMessage_TextPart, msg_HomeToolRotate) == 0) {
+		CheckToolRotateHomePosition();
+		printWithParity_Combined(inputString, msg_OK);
       } else {
         // Handle command not found
         printWithParity_P(msg_COMMAND_NOT_FOUND);
