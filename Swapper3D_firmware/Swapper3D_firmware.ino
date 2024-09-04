@@ -591,18 +591,11 @@ void CheckToolRotateHomePosition()
 		// Serial.print("Last angle checked:");
 		// Serial.println(AngleToTest);
 	}
-
 		
-	//set TR to Start Position
-	pulselength = map(pos_Tool_Rotate_HomeStart, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+	//set TR back to it's position before the homing routine
+	pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
 	delay(50);
-	
-	//refresh the tool rotate positions from eeprom
-	SetSwapStepLocations();
-
-	//reset the 
-	SetServosToStartPositions();
 }
 
 void SetServosToStartPositions()
@@ -643,7 +636,7 @@ void SetSwapStepLocations(){
 	//**** Tool Rotate (TR) ****
 	//next line is starting first 1st position
 	pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext = 105 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //106 //105 //103 //102; //104; //103;
-	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //100 //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95; //SetupMode
+	int pos_Tool_Rotate_LeftOfToolInHolder = 100 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //100 //98 //97 //98; //99; //101;//101 to try and deal with the single nozzle load failure //100; //102; //101;//103;//95;
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar = 93 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //97 //96 //95 //80, 85; //90; //83;//76 = 11
 	int pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool = 97 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //99 //97 //98, 97; //95;
 	int pos_Tool_Rotate_UnderToolHolder_ConnectWithNozzleCollar_NoPressure = pos_Tool_Rotate_UnderToolHolder_CenteredUnderCurrentTool; //95; //97; //98; //96; //91; //86 = 5
@@ -669,7 +662,7 @@ void SetSwapStepLocations(){
 	int pos_Tool_Height_NozzleCollarLevel = 42 + Adjustment_Tool_Height; //33 //37 //33 //30, Servo change 35; //38; //36; //29;
 	int pos_Tool_Height_ToolLoweredButStillInHolder = 59 + Adjustment_Tool_Height; //54 //Servo change 49; //42;
 	int pos_Tool_Height_ToolFullyInsertedInHolder = 43 + Adjustment_Tool_Height; //31 //27 //25, 22, Servo change 27; //29; //20; //13;
-	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 47 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29; //SetupMode
+	int pos_Tool_Height_ToolFullyInsertedInHolder_NoPressure = 47 + Adjustment_Tool_Height; //38 //34 //35, 32, Servo change 37; //36; //40; //29;
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder = 42 + Adjustment_Tool_Height; //41 //37 //39, 40, 39, 33, Servo change 38; //40; //42; //35; //28;
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_ScrappingHotendMildPressure = 45 + Adjustment_Tool_Height;//44 //40 //Servo change 43; //42; //41; //42; //40; //42; //clunking? maybe 41?
 	int pos_Tool_Height_ToolFullyInsertedIntoExtruder_NoPressure = 51 + Adjustment_Tool_Height; //43 //42 //38 //39; 38; //Servo change 43; //44; //42; // 45; // 42; //35;
