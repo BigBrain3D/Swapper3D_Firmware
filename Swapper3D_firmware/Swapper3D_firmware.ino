@@ -492,7 +492,7 @@ void CheckToolRotateHomePosition()
 	int pos_Tool_Rotate_HomeStart = pos_Tool_Rotate_ButtingTheToolToTheLeftOfNext - 10; // this is the position of TR at the start of the homing routine
 	//the expectedDegreesFromHomeStart is the number to adjust if rotate isn't working correctly.
 	//because then it will automatically adjust to this number on homing it and startup.
-	int expectedDegreesFromHomeStart = 9; //6; //this is the number of degrees that we expect to move from the home start postion to the homing switch (re: check button) being pressed
+	int expectedDegreesFromHomeStart = 10; //9; //6; //this is the number of degrees that we expect to move from the home start postion to the homing switch (re: check button) being pressed
 	int pos_Tool_Height_Homing = 105 + Adjustment_Tool_Height;
 	int AngleToTest = pos_Tool_Rotate_HomeStart;
 	int maxHomingAngle = AngleToTest - 21;
@@ -567,36 +567,42 @@ void CheckToolRotateHomePosition()
 		
 		if(suggested_Homing_offset_ToolRotate != 0)
 		{
+			printWithParity_P(PSTR("HomeAdjusted:"));
+			PrintIntWithParityAsChar(suggested_Homing_offset_ToolRotate);
+			// Serial.println(suggested_Homing_offset_ToolRotate);
+
 			Homing_offset_ToolRotate = suggested_Homing_offset_ToolRotate;
 		}
-		// else
-		// {			
+		else
+		{			
+			printWithParity_P(PSTR("No Adjust"));
 			// Serial.print("Homing_offset_ToolRotate Adjusted:");
 			// Serial.println(Homing_offset_ToolRotate);
 			// Serial.println("No Adjustment needed; Current offset is correct.");
-		// }			
+		}			
 		
-		
-		//set TR to Start Position
-		pulselength = map(pos_Tool_Rotate_HomeStart, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
-		pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
-		delay(50);
-		
-		//refresh the tool rotate positions from eeprom
-		SetSwapStepLocations();
-
-		//reset the 
-		SetServosToStartPositions();
 		
 	}
-	// //Error because home was not found 
-	// else
-	// {
+	//Error because home was not found 
+	else
+	{		
+		printWithParity_P(PSTR("TRHomeNotFound"));
 		// Serial.println("ERROR, Home NOT found");
 		// Serial.print("Last angle checked:");
 		// Serial.println(AngleToTest);
-	// }
+	}
 
+		
+	//set TR to Start Position
+	pulselength = map(pos_Tool_Rotate_HomeStart, 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
+	pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
+	delay(50);
+	
+	//refresh the tool rotate positions from eeprom
+	SetSwapStepLocations();
+
+	//reset the 
+	SetServosToStartPositions();
 }
 
 void SetServosToStartPositions()
@@ -611,8 +617,6 @@ void SetServosToStartPositions()
 	}
 
 	delay(300);
-	//align to the first tool
-	ToolHolder_AlignToThisTool(0);
 }
 
 void SetSwapStepLocations(){
@@ -650,7 +654,7 @@ void SetSwapStepLocations(){
 	pos_Tool_Rotate_UnderExtruder_ConnectWithNozzleCollar = 283 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //285, 286, 285 //284; 286; //Why did this change???!?!??? 285; //283; //284; //283; // 282; //283; //284; //285; //283; //287; //285; //278;
 	int pos_Tool_Rotate_UnderExtruder_JerkReleaseFromNozzleCollar = 293 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //292 //293 291; // 310; //305; //297;
 	int pos_Tool_Rotate_UnderExtruder_ReleasedFromNozzleCollar = 291 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //290 //291, 293 291; //285;
-	int pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle = 289 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //new
+	int pos_Tool_Rotate_UnderExtruder_UnderTaperButPastNozzle = 291 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //had to increase a little because of the TR homing //289 //new
 	int pos_Tool_Rotate_UnderExtruder_TouchSideOfNozzle = 285 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //new
 	
 	int pos_Tool_Rotate_WaitingForunloadCommand = 148 + Adjustment_Tool_Rotate + Homing_offset_ToolRotate; //147 //140;
@@ -685,7 +689,7 @@ void SetSwapStepLocations(){
 	//Servo 3
 	//next line is 1st starting first 1st position
 	pos_QuickSwapHotend_Lock_Locked = 70 + Adjustment_QuickSwapHotend_Lock; //70, 0
-	pos_QuickSwapHotend_Lock_Unlocked = 100 + Adjustment_QuickSwapHotend_Lock; //104, 34 //32; //33; //34; //35; //29;
+	pos_QuickSwapHotend_Lock_Unlocked = 77; + Adjustment_QuickSwapHotend_Lock; //100 This changed a TON on Sep 3rd 2024, maybe the end effector was bent? //104, 34 //32; //33; //34; //35; //29;
 
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
@@ -1088,6 +1092,10 @@ void setup() {
   SetSwapStepLocations();
   
   SetServosToStartPositions(); //added Sep 3rd 2024 for TR homing
+  
+  
+  //align to the first tool
+  ToolHolder_AlignToThisTool(0); //this must go here not in homing TR or in SetServosToStartPositions because homing calls it and then resets it to no1 instead of whichever unload it's on.
   
   //CheckToolRotateHomePosition(); //don't put this here. It messes with the octoprint connection on startup. Instead, once octoprint connects we'll call the TR home directly from octoprint.
   
