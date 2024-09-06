@@ -596,6 +596,12 @@ void CheckToolRotateHomePosition()
 	pulselength = map(servos_currentAngle[s_Tool_Rotate], 0, servos_maxAngle[s_Tool_Rotate], servo_pwm_min, servo_pwm_max);
 	pwm.setPWM(servos_pin[s_Tool_Rotate], 0, pulselength);	
 	delay(50);
+	
+	
+	//set TH back to it's position before the homing routine
+	pulselength = map(servos_currentAngle[s_Tool_Height], 0, servos_maxAngle[s_Tool_Height], servo_pwm_min, servo_pwm_max);
+	pwm.setPWM(servos_pin[s_Tool_Height], 0, pulselength);	
+	delay(50);
 }
 
 void SetServosToStartPositions()
