@@ -688,7 +688,7 @@ void SetSwapStepLocations(){
 	//Servo 3
 	//next line is 1st starting first 1st position
 	pos_QuickSwapHotend_Lock_Locked = 70 + Adjustment_QuickSwapHotend_Lock; //70, 0
-	pos_QuickSwapHotend_Lock_Unlocked = 77; + Adjustment_QuickSwapHotend_Lock; //100 This changed a TON on Sep 3rd 2024, maybe the end effector was bent? //104, 34 //32; //33; //34; //35; //29;
+	pos_QuickSwapHotend_Lock_Unlocked = 100; + Adjustment_QuickSwapHotend_Lock; //77;Oct 2nd I put it back.This maybe was a mistake.; 100 This changed a TON on Sep 3rd 2024, maybe the end effector was bent? //104, 34 //32; //33; //34; //35; //29;
 
 	//**** Cutter Rotate (CR) ****
 	//Servo 5
